@@ -1,0 +1,134 @@
+// Honey Foods Database Schema
+// This schema defines all database models for the e-commerce platform
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+// Admin user model
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  passwordHash  String
+  role          Role      @default(ADMIN)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+enum Role {
+  ADMIN
+  SUPER_ADMIN
+}
+
+// Product model
+model Product {
+  id            String      @id @default(cuid())
+  name          String
+  slug          String      @unique
+  description   String?
+  price         Float
+  image         String
+  imagePublicId String?     // Cloudinary public ID for deletion
+  available     Boolean     @default(true)
+  featured      Boolean     @default(false)
+  category      String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  orderItems    OrderItem[]
+  
+  @@index([available, featured])
+  @@index([slug])
+}
+
+// Order model
+model Order {
+  id              String        @id @default(cuid())
+  orderNumber     String        @unique
+  customerName    String
+  customerEmail   String?
+  customerPhone   String
+  deliveryAddress String
+  customNote      String?
+  
+  subtotal        Float
+  deliveryFee     Float         @default(0)
+  total           Float
+  
+  status          OrderStatus   @default(PENDING)
+  paymentStatus   PaymentStatus @default(PENDING)
+  paymentMethod   String?
+  
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  orderItems      OrderItem[]
+  payment         Payment?
+  
+  @@index([orderNumber])
+  @@index([status])
+  @@index([paymentStatus])
+  @@index([createdAt])
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PREPARING
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+// Order items (products in an order)
+model OrderItem {
+  id        String   @id @default(cuid())
+  orderId   String
+  productId String
+  
+  name      String   // Snapshot of product name
+  price     Float    // Snapshot of price at time of order
+  quantity  Int
+  subtotal  Float
+  
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
+  
+  @@index([orderId])
+  @@index([productId])
+}
+
+// Payment model
+model Payment {
+  id                String        @id @default(cuid())
+  orderId           String        @unique
+  
+  amount            Float
+  currency          String        @default("NGN")
+  
+  provider          String        // 'stripe', 'paystack', 'applepay'
+  providerPaymentId String?       // Payment ID from provider
+  providerMetadata  Json?         // Additional provider data
+  
+  status            PaymentStatus @default(PENDING)
+  
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  
+  order             Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  @@index([orderId])
+  @@index([providerPaymentId])
+}

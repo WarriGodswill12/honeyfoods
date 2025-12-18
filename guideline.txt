@@ -1,0 +1,283 @@
+PROJECT NAME:
+Honey Foods – Pastries E-Commerce Website
+
+TAGLINE:
+“Taste is everything”
+
+==================================================
+1. PROJECT OVERVIEW
+==================================================
+
+Honey Foods is a simple, elegant, mobile-first e-commerce website for a food/pastries brand.
+The primary goal is to allow customers to browse food items, add them to cart, and complete
+checkout quickly using Apple Pay.
+
+This is NOT a marketplace or complex e-commerce platform.
+The focus is on:
+- Visual appeal
+- Speed
+- Ease of checkout
+- Brand consistency
+
+The website must feel warm, premium, clean, and trustworthy.
+
+==================================================
+2. TARGET USERS
+==================================================
+
+Primary users:
+- Customers ordering pastries/food via mobile devices (iOS first)
+- Local customers (Nigeria-based)
+
+Secondary users:
+- Brand owner/admin managing products and orders
+
+==================================================
+3. CORE GOALS
+==================================================
+
+Customer goals:
+- View available food items with prices
+- Add items to cart
+- Checkout quickly with minimal friction
+- Receive confirmation after payment
+
+Business goals:
+- Easily upload and manage products
+- Receive paid orders with customer delivery info
+- Maintain a strong brand identity online
+
+==================================================
+4. CORE FEATURES (MVP)
+==================================================
+
+Customer-facing features:
+- Homepage with featured products
+- Product listing (shop page)
+- Product detail page
+- Cart functionality
+- Checkout with Apple Pay
+- Order confirmation page
+
+Admin features:
+- Secure admin login
+- Add/edit/delete products
+- Upload product images
+- Set product prices
+- View customer orders
+- View payment status (Paid / Pending)
+
+==================================================
+5. USER JOURNEY
+==================================================
+
+1. User lands on Homepage
+2. User clicks “Order Now” or “Shop”
+3. User browses products
+4. User selects a product
+5. User adds product to cart
+6. User reviews cart
+7. User proceeds to checkout
+8. User pays using Apple Pay
+9. Payment is verified
+10. User sees order confirmation
+11. Admin receives order details
+
+==================================================
+6. PAGE STRUCTURE & BEHAVIOR
+==================================================
+
+HOME PAGE:
+- Brand logo and tagline
+- Hero image of pastries/food
+- Primary CTA: “Order Now”
+- Featured products grid
+- Trust section (fresh, quality ingredients, fast delivery)
+- Footer with contact info and WhatsApp link
+
+SHOP PAGE:
+- Grid layout of all available products
+- Each product card shows:
+  - Image
+  - Name
+  - Price
+  - Add to Cart button
+
+PRODUCT DETAIL PAGE:
+- Large product image
+- Product name
+- Price
+- Short description
+- Quantity selector
+- Add to Cart button
+- Optional custom note field (e.g. cake message)
+
+CART PAGE:
+- List of selected products
+- Quantity adjustment
+- Remove item
+- Subtotal
+- Delivery fee (if applicable)
+- Total amount
+- Proceed to Checkout button
+
+CHECKOUT PAGE:
+- Express Apple Pay button (shown prominently if supported)
+- Fallback manual checkout (if Apple Pay unavailable)
+- Order summary
+
+ORDER CONFIRMATION PAGE:
+- Thank you message
+- Order number
+- Payment status
+- Estimated delivery time
+- Contact / WhatsApp button
+
+==================================================
+7. PAYMENT SYSTEM (APPLE PAY)
+==================================================
+
+Primary payment method:
+- Apple Pay
+
+Payment principles:
+- Apple Pay should be shown as express checkout
+- Checkout should be as frictionless as possible
+- No unnecessary form fields when Apple Pay is used
+
+Payment flow:
+1. Backend creates order with status = PENDING
+2. Apple Pay payment is initiated
+3. User authorizes payment
+4. Payment is verified on backend
+5. Order status updated to PAID
+6. User redirected to confirmation page
+
+Payment architecture must be abstracted so that
+additional payment providers can be added later
+without changing checkout UI logic.
+
+==================================================
+8. PAYMENT ABSTRACTION (IMPORTANT)
+==================================================
+
+Use a provider-based architecture:
+
+PaymentService
+- ApplePayProvider (current)
+- Future providers (Paystack, Flutterwave, Stripe)
+
+Frontend must NOT depend directly on a specific gateway.
+
+==================================================
+9. ADMIN DASHBOARD REQUIREMENTS
+==================================================
+
+Admin must be able to:
+- Log in securely
+- Create a product:
+  - Name
+  - Price
+  - Description
+  - Image upload
+  - Availability toggle
+- Edit or delete products
+- View orders:
+  - Customer name
+  - Phone number
+  - Delivery address
+  - Ordered items
+  - Payment status
+  - Order date
+
+Admin UI should be minimal and easy to use.
+
+==================================================
+10. BRAND GUIDELINES (VERY IMPORTANT)
+==================================================
+
+Brand name:
+Honey Foods
+
+Tagline:
+Taste is everything
+
+Brand personality:
+- Warm
+- Premium
+- Clean
+- Food-focused
+- Trustworthy
+
+COLOR PALETTE:
+Primary:
+- Honey Gold: #E0A81F
+- Charcoal Black: #2B2B2B
+
+Secondary:
+- Warm Orange: #E06A1F
+- Soft Cream/White: #FAFAF8
+
+Usage rules:
+- Buttons: Honey Gold background
+- Prices: Warm Orange
+- Text: Charcoal Black
+- Backgrounds: Soft cream/white
+- Avoid pure white and overly dark backgrounds
+
+TYPOGRAPHY:
+- Headings: Poppins or Playfair Display
+- Body text: Inter or Open Sans
+
+DESIGN RULES:
+- Minimal layout
+- No clutter
+- Large food imagery
+- Rounded buttons
+- Mobile-first design
+- No flashy or distracting animations
+
+==================================================
+11. TECHNICAL CONSIDERATIONS
+==================================================
+
+Frontend:
+- Mobile-first
+- SEO-friendly
+- Fast load times
+
+Backend:
+- REST or serverless API
+- Secure payment verification
+- Order persistence
+
+Database (conceptual):
+- Users (admin)
+- Products
+- Orders
+- Order items
+- Payments
+
+==================================================
+12. NON-GOALS (OUT OF SCOPE)
+==================================================
+
+- User accounts for customers
+- Loyalty points
+- Reviews & ratings
+- Advanced analytics
+- Multi-vendor marketplace
+- Subscription billing
+
+==================================================
+13. SUCCESS METRICS
+==================================================
+
+- Users can place an order in under 60 seconds
+- Apple Pay checkout works smoothly on iOS
+- Admin can add a new product in under 2 minutes
+- Orders are clearly visible and manageable
+
+==================================================
+END OF PROJECT SPEC
+==================================================
