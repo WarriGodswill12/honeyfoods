@@ -22,7 +22,7 @@ export function Header() {
     <header className="sticky top-0 z-40 w-full bg-soft-cream/80 backdrop-blur-md border-b border-honey-gold/10">
       <div className="container mx-auto flex h-16 md:h-20 items-center justify-between px-4 sm:px-6 lg:px-12">
         {/* Logo */}
-        <Link href="/" className="group flex items-center flex-shrink-0">
+        <Link href="/" className="group flex items-center shrink-0">
           <img
             src="/logo.png"
             alt={siteConfig.name}
