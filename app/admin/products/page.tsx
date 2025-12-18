@@ -360,7 +360,7 @@ export default function ProductsPage() {
 
       {/* Add/Edit Modal */}
       <Modal
-        isOpen={isModalOpen}
+        open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         title={editingProduct ? "Edit Product" : "Add New Product"}
       >
