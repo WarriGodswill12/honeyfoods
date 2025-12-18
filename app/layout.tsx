@@ -20,15 +20,18 @@ const poppins = Poppins({
 export const metadata: Metadata = {
   title: siteConfig.metadata.title,
   description: siteConfig.metadata.description,
-  keywords: siteConfig.metadata.keywords,
-  authors: siteConfig.metadata.authors,
+  keywords: [...siteConfig.metadata.keywords],
+  authors: [...siteConfig.metadata.authors],
   creator: siteConfig.metadata.creator,
   publisher: siteConfig.metadata.publisher,
   openGraph: {
-    ...siteConfig.metadata.openGraph,
+    type: siteConfig.metadata.openGraph.type,
+    locale: siteConfig.metadata.openGraph.locale,
+    siteName: siteConfig.metadata.openGraph.siteName,
     title: siteConfig.name,
     description: siteConfig.description,
     url: siteConfig.url,
+    images: siteConfig.metadata.openGraph.images.map((img) => ({ ...img })),
   },
   twitter: siteConfig.metadata.twitter,
 };
