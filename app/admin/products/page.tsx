@@ -221,7 +221,7 @@ export default function ProductsPage() {
         <div className="flex gap-3">
           <Dialog open={isClearDialogOpen} onOpenChange={setIsClearDialogOpen}>
             <DialogTrigger asChild>
-              <Button variant="danger" size="lg">
+              <Button variant="destructive" size="lg">
                 <Trash className="h-5 w-5 mr-2" />
                 Clear All
               </Button>
@@ -244,9 +244,9 @@ export default function ProductsPage() {
                   Cancel
                 </Button>
                 <Button
-                  variant="danger"
+                  variant="destructive"
                   onClick={handleClearAll}
-                  isLoading={isClearing}
+                  disabled={isClearing}
                 >
                   {isClearing ? "Clearing..." : "Yes, Clear All Products"}
                 </Button>
@@ -347,7 +347,7 @@ export default function ProductsPage() {
                       <Edit2 className="h-4 w-4" />
                     </Button>
                     <Button
-                      variant="danger"
+                      variant="destructive"
                       size="sm"
                       onClick={() => handleDelete(product)}
                     >
