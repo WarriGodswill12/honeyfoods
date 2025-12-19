@@ -487,8 +487,14 @@ export default function ProductsPage() {
             >
               Cancel
             </Button>
-            <Button type="submit" isLoading={isSubmitting} className="flex-1">
-              {editingProduct ? "Update Product" : "Add Product"}
+            <Button type="submit" disabled={isSubmitting} className="flex-1">
+              {isSubmitting
+                ? editingProduct
+                  ? "Updating..."
+                  : "Adding..."
+                : editingProduct
+                ? "Update Product"
+                : "Add Product"}
             </Button>
           </div>
         </form>
