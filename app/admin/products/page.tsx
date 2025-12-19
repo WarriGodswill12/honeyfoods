@@ -111,6 +111,7 @@ export default function ProductsPage() {
       image: product.image,
       featured: product.featured,
       available: product.available,
+      sizes: "",
     });
     setError("");
     setIsModalOpen(true);
