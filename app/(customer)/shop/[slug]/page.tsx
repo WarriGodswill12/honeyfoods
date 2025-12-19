@@ -7,9 +7,30 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useCart } from "@/store/cart-store";
 import { formatPrice, slugify } from "@/lib/utils";
-import { ShoppingCart, ArrowLeft, Plus, Minus, Package } from "lucide-react";
+import {
+  ShoppingCart,
+  ArrowLeft,
+  Plus,
+  Minus,
+  Package,
+  Ruler,
+} from "lucide-react";
 import { FadeIn, SlideInUp } from "@/components/shared/animated";
 import type { Product } from "@/types/product";
 
@@ -19,6 +40,8 @@ export default function ProductDetailPage() {
   const { addItem } = useCart();
   const [product, setProduct] = useState<Product | null>(null);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
+  const [sizeVariations, setSizeVariations] = useState<Product[]>([]);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const [customNote, setCustomNote] = useState("");
@@ -47,12 +70,34 @@ export default function ProductDetailPage() {
       }
 
       setProduct(foundProduct);
+      setAllProducts(products);
 
-      // Get related products (same category, excluding current)
+      // Extract base name (remove size info)
+      const getBaseName = (name: string) => {
+        return name
+          .replace(/\s*-\s*(1|2)\s*Litre.*$/i, "")
+          .replace(/\s*-\s*(1|2)\s*L.*$/i, "")
+          .replace(/\s*\((Small|Medium|Large|Mini|Regular)\)$/i, "")
+          .replace(/\s*(Small|Medium|Large|Mini|Regular)$/i, "")
+          .replace(/\s*-\s*\d+\s*(?:inch|inches|").*$/i, "")
+          .replace(/\s*-\s*\d+\s*(?:Pieces?|pcs)$/i, "")
+          .trim();
+      };
+
+      const baseName = getBaseName(foundProduct.name);
+
+      // Find size variations (products with same base name)
+      const variations = products.filter(
+        (p: Product) => getBaseName(p.name) === baseName
+      );
+      setSizeVariations(variations);
+
+      // Get related products (same category, excluding current and variations)
+      const variationIds = variations.map((v: Product) => v.id);
       const related = products
         .filter(
           (p: Product) =>
-            p.category === foundProduct.category && p.id !== foundProduct.id
+            p.category === foundProduct.category && !variationIds.includes(p.id)
         )
         .slice(0, 3);
       setRelatedProducts(related);
@@ -89,6 +134,34 @@ export default function ProductDetailPage() {
   const decrementQuantity = () =>
     setQuantity((prev) => (prev > 1 ? prev - 1 : 1));
 
+  const handleSizeChange = (productId: string) => {
+    const selectedProduct = sizeVariations.find(
+      (p) => p.id.toString() === productId
+    );
+    if (selectedProduct) {
+      router.push(`/shop/${slugify(selectedProduct.name)}`);
+    }
+  };
+
+  // Extract size from product name
+  const extractSize = (name: string): string | null => {
+    const sizePatterns = [
+      /\b(Small|Medium|Large)\b/i,
+      /\b(\d+\s*(?:L|Litre|Litres?))\b/i,
+      /\b(Mini)\b/i,
+      /\b(\d+\s*(?:inch|inches|"))\b/i,
+      /\b(\d+\s*(?:Pieces?|pcs))\b/i,
+    ];
+
+    for (const pattern of sizePatterns) {
+      const match = name.match(pattern);
+      if (match) return match[1];
+    }
+    return null;
+  };
+
+  const productSize = product ? extractSize(product.name) : null;
+
   if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-16 flex items-center justify-center min-h-[60vh]">
@@ -116,23 +189,34 @@ export default function ProductDetailPage() {
 
       {/* Product Details */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 mb-16">
-        {/* Product Image */}
+        {/* Product Image Carousel */}
         <FadeIn>
-          <div className="relative aspect-square rounded-2xl sm:rounded-3xl overflow-hidden bg-soft-cream shadow-lg">
-            <Image
-              src={product.image}
-              alt={product.name}
-              fill
-              className="object-cover"
-              priority
-            />
-            {product.featured && (
-              <div className="absolute top-4 right-4">
-                <Badge variant="primary" className="text-sm">
-                  Featured
-                </Badge>
-              </div>
-            )}
+          <div className="relative">
+            <Carousel className="w-full">
+              <CarouselContent>
+                <CarouselItem>
+                  <div className="relative aspect-square rounded-2xl sm:rounded-3xl overflow-hidden bg-soft-cream shadow-lg">
+                    <Image
+                      src={product.image}
+                      alt={product.name}
+                      fill
+                      className="object-cover"
+                      priority
+                    />
+                    {product.featured && (
+                      <div className="absolute top-4 right-4">
+                        <Badge variant="primary" className="text-sm">
+                          Featured
+                        </Badge>
+                      </div>
+                    )}
+                  </div>
+                </CarouselItem>
+              </CarouselContent>
+              {/* Navigation will appear when multiple images are added */}
+              <CarouselPrevious className="left-4" />
+              <CarouselNext className="right-4" />
+            </Carousel>
           </div>
         </FadeIn>
 
@@ -151,6 +235,46 @@ export default function ProductDetailPage() {
               </p>
             </div>
 
+            {/* Size Selector */}
+            {sizeVariations.length > 1 ? (
+              <div className="mb-6 pb-6 border-b border-gray-200">
+                <label className="block text-sm font-semibold text-charcoal-black mb-3">
+                  <Ruler className="inline h-4 w-4 text-honey-gold mr-2" />
+                  Select Size
+                </label>
+                <Select
+                  value={product.id.toString()}
+                  onValueChange={handleSizeChange}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {sizeVariations.map((variation) => {
+                      const size = extractSize(variation.name);
+                      return (
+                        <SelectItem
+                          key={variation.id}
+                          value={variation.id.toString()}
+                        >
+                          {size || variation.name} -{" "}
+                          {formatPrice(variation.price)}
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : productSize ? (
+              <div className="mb-6 pb-6 border-b border-gray-200">
+                <div className="flex items-center gap-2 text-gray-700">
+                  <Ruler className="h-5 w-5 text-honey-gold" />
+                  <span className="font-semibold">Size:</span>
+                  <span className="text-lg">{productSize}</span>
+                </div>
+              </div>
+            ) : null}
+
             {/* Description */}
             {product.description && (
               <div className="mb-6 pb-6 border-b border-gray-200">
@@ -162,6 +286,44 @@ export default function ProductDetailPage() {
                 </p>
               </div>
             )}
+
+            {/* Product Details */}
+            <div className="mb-6 pb-6 border-b border-gray-200">
+              <h3 className="font-semibold text-lg text-charcoal-black mb-3">
+                Product Details
+              </h3>
+              <div className="space-y-2 text-sm text-gray-600">
+                <div className="flex items-center gap-2">
+                  <Package className="h-4 w-4 text-honey-gold" />
+                  <span>
+                    Category:{" "}
+                    <strong className="text-charcoal-black">
+                      {product.category}
+                    </strong>
+                  </span>
+                </div>
+                {productSize && (
+                  <div className="flex items-center gap-2">
+                    <Ruler className="h-4 w-4 text-honey-gold" />
+                    <span>
+                      Size/Quantity:{" "}
+                      <strong className="text-charcoal-black">
+                        {productSize}
+                      </strong>
+                    </span>
+                  </div>
+                )}
+                <div className="flex items-center gap-2">
+                  <ShoppingCart className="h-4 w-4 text-honey-gold" />
+                  <span>
+                    Price per unit:{" "}
+                    <strong className="text-charcoal-black">
+                      {formatPrice(product.price)}
+                    </strong>
+                  </span>
+                </div>
+              </div>
+            </div>
 
             {/* Quantity Selector */}
             <div className="mb-6">

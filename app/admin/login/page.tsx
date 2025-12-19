@@ -94,7 +94,7 @@ export default function AdminLoginPage() {
               type="submit"
               className="w-full"
               size="lg"
-              isLoading={isLoading}
+              disabled={isLoading}
             >
               {isLoading ? "Signing in..." : "Sign In"}
             </Button>

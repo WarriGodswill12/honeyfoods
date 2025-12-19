@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ShoppingCart, Menu, X } from "lucide-react";
+import { ShoppingCart, Menu, X, ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { siteConfig } from "@/config/site";
@@ -9,11 +9,18 @@ import { useCart } from "@/store/cart-store";
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [shopDropdownOpen, setShopDropdownOpen] = useState(false);
   const { getTotalItems } = useCart();
+
+  const categories = [
+    { label: "Nigerian Foods", href: "/shop?category=Nigerian%20Foods" },
+    { label: "Pastries", href: "/shop?category=Pastries" },
+    { label: "Cakes", href: "/shop?category=Cakes" },
+    { label: "Shop All", href: "/shop" },
+  ];
 
   const navLinks = [
     { label: "Home", href: "/" },
-    { label: "Shop", href: "/shop" },
     { label: "About", href: "/about" },
     { label: "Contact", href: "/contact" },
   ];
@@ -41,6 +48,37 @@ export function Header() {
               {link.label}
             </Link>
           ))}
+
+          {/* Shop Dropdown */}
+          <div
+            className="relative"
+            onMouseEnter={() => setShopDropdownOpen(true)}
+            onMouseLeave={() => setShopDropdownOpen(false)}
+          >
+            <button className="text-sm lg:text-base font-medium text-charcoal-black hover:text-honey-gold transition-colors relative after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 after:bg-honey-gold after:transition-all hover:after:w-full flex items-center gap-1">
+              Shop
+              <ChevronDown
+                className={cn(
+                  "h-4 w-4 transition-transform",
+                  shopDropdownOpen && "rotate-180"
+                )}
+              />
+            </button>
+
+            {shopDropdownOpen && (
+              <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 py-2">
+                {categories.map((category) => (
+                  <Link
+                    key={category.href}
+                    href={category.href}
+                    className="block px-4 py-2 text-sm text-charcoal-black hover:bg-soft-cream hover:text-honey-gold transition-colors"
+                  >
+                    {category.label}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
         </nav>
 
         {/* Cart & Mobile Menu */}
@@ -88,6 +126,23 @@ export function Header() {
                 {link.label}
               </Link>
             ))}
+
+            {/* Shop Submenu */}
+            <div className="border-t border-gray-100 pt-2 mt-2">
+              <p className="text-xs font-semibold text-gray-500 uppercase px-4 py-2">
+                Shop
+              </p>
+              {categories.map((category) => (
+                <Link
+                  key={category.href}
+                  href={category.href}
+                  className="block text-base text-charcoal-black hover:text-honey-gold transition-colors py-3 px-4 pl-8 rounded-xl hover:bg-soft-cream active:bg-honey-gold/10"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  {category.label}
+                </Link>
+              ))}
+            </div>
           </nav>
         </div>
       )}

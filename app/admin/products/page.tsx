@@ -51,6 +51,7 @@ export default function ProductsPage() {
     image: "",
     featured: false,
     available: true,
+    sizes: "" as string,
   });
 
   // Fetch products
@@ -94,6 +95,7 @@ export default function ProductsPage() {
       image: "",
       featured: false,
       available: true,
+      sizes: "",
     });
     setError("");
     setIsModalOpen(true);
@@ -418,6 +420,22 @@ export default function ProductsPage() {
               required
               disabled={isSubmitting}
             />
+          </div>
+
+          <div>
+            <Input
+              label="Sizes/Variants (Optional)"
+              placeholder="e.g. 1L, 2L, 5L or Small, Medium, Large or 6 Inch, 8 Inch, 10 Inch"
+              value={formData.sizes}
+              onChange={(e) =>
+                setFormData({ ...formData, sizes: e.target.value })
+              }
+              disabled={isSubmitting}
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Separate multiple sizes with commas. Leave empty if product has no
+              size variations.
+            </p>
           </div>
 
           <Input

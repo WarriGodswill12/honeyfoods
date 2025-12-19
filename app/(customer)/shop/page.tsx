@@ -1,9 +1,17 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useCart } from "@/store/cart-store";
 import { formatPrice, slugify } from "@/lib/utils";
 import { ShoppingCart, Search } from "lucide-react";
@@ -17,12 +25,21 @@ import {
 } from "@/components/shared/animated";
 
 export default function ShopPage() {
+  const searchParams = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const { addItem } = useCart();
+
+  // Read category from URL params on mount
+  useEffect(() => {
+    const categoryParam = searchParams.get("category");
+    if (categoryParam) {
+      setSelectedCategory(categoryParam);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     fetchProducts();
@@ -112,21 +129,26 @@ export default function ShopPage() {
             />
           </div>
 
-          {/* Category Filters */}
-          <div className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap px-2">
-            {categories.map((category) => (
-              <button
-                key={category}
-                onClick={() => setSelectedCategory(category)}
-                className={`px-4 sm:px-6 py-2 sm:py-2.5 text-sm sm:text-base rounded-full font-medium transition-all active:scale-95 ${
-                  selectedCategory === category
-                    ? "bg-honey-gold text-white shadow-md"
-                    : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-200"
-                }`}
-              >
-                {category.charAt(0).toUpperCase() + category.slice(1)}
-              </button>
-            ))}
+          {/* Category Filter Dropdown */}
+          <div className="flex justify-center px-2">
+            <Select
+              value={selectedCategory}
+              onValueChange={setSelectedCategory}
+            >
+              <SelectTrigger className="w-70 rounded-full border-gray-200 focus:ring-2 focus:ring-honey-gold">
+                <SelectValue placeholder="All Categories" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {categories
+                  .filter((cat) => cat !== "all")
+                  .map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <p className="text-center text-sm text-gray-600">

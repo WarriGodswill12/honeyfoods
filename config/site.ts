@@ -8,10 +8,10 @@ export const siteConfig = {
 
   // Contact information
   contact: {
-    phone: "+234 XXX XXX XXXX", // Replace with actual number
-    email: "hello@honeyfoods.com",
-    whatsapp: "+234XXXXXXXXXX", // Replace with actual WhatsApp number
-    address: "Lagos, Nigeria",
+    phone: "+44 7442 932429",
+    email: "honeycakesandfoods@gmail.com",
+    whatsapp: "+447442932429",
+    address: "Hertfordshire, UK",
   },
 
   // Social media links

@@ -40,7 +40,7 @@ async function main() {
         "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=400&h=400&fit=crop",
       available: true,
       featured: true,
-      category: "Rice (1 Litre)",
+      category: "Nigerian Foods",
     },
     {
       name: "Fried Rice - 1 Litre Bowl",
@@ -51,7 +51,7 @@ async function main() {
         "https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=400&h=400&fit=crop",
       available: true,
       featured: true,
-      category: "Rice (1 Litre)",
+      category: "Nigerian Foods",
     },
     {
       name: "Coconut Rice - 1 Litre Bowl",
@@ -62,7 +62,7 @@ async function main() {
         "https://images.unsplash.com/photo-1516684732162-798a0062be99?w=400&h=400&fit=crop",
       available: true,
       featured: true,
-      category: "Rice (1 Litre)",
+      category: "Nigerian Foods",
     },
 
     // 2 Litres Rice
@@ -75,7 +75,7 @@ async function main() {
         "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=400&h=400&fit=crop",
       available: true,
       featured: false,
-      category: "Rice (2 Litres)",
+      category: "Nigerian Foods",
     },
     {
       name: "Fried Rice - 2 Litres",
@@ -86,7 +86,7 @@ async function main() {
         "https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=400&h=400&fit=crop",
       available: true,
       featured: false,
-      category: "Rice (2 Litres)",
+      category: "Nigerian Foods",
     },
     {
       name: "Coconut Rice - 2 Litres",
@@ -97,7 +97,7 @@ async function main() {
         "https://images.unsplash.com/photo-1516684732162-798a0062be99?w=400&h=400&fit=crop",
       available: true,
       featured: false,
-      category: "Rice (2 Litres)",
+      category: "Nigerian Foods",
     },
 
     // Proteins
@@ -110,7 +110,7 @@ async function main() {
         "https://images.unsplash.com/photo-1574672280600-4accfa5b6f98?w=400&h=400&fit=crop",
       available: true,
       featured: false,
-      category: "Proteins",
+      category: "Nigerian Foods",
     },
     {
       name: "Chicken - 5 Pieces",
@@ -121,7 +121,7 @@ async function main() {
         "https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=400&h=400&fit=crop",
       available: true,
       featured: false,
-      category: "Proteins",
+      category: "Nigerian Foods",
     },
     {
       name: "Fish - 5 Pieces",
@@ -132,7 +132,7 @@ async function main() {
         "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=400&h=400&fit=crop",
       available: true,
       featured: false,
-      category: "Proteins",
+      category: "Nigerian Foods",
     },
 
     // Regular Pastries (MOQ 6)
@@ -180,7 +180,7 @@ async function main() {
         "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400&h=400&fit=crop",
       available: true,
       featured: false,
-      category: "Mini Pastries",
+      category: "Pastries",
     },
     {
       name: "Mini Chicken Pie",
@@ -191,7 +191,7 @@ async function main() {
         "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400&h=400&fit=crop",
       available: true,
       featured: false,
-      category: "Mini Pastries",
+      category: "Pastries",
     },
 
     // Puff Puff
@@ -204,7 +204,7 @@ async function main() {
         "https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=400&h=400&fit=crop",
       available: true,
       featured: false,
-      category: "Snacks",
+      category: "Pastries",
     },
     {
       name: "Puff Puff - 15 Pieces",
@@ -215,7 +215,7 @@ async function main() {
         "https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=400&h=400&fit=crop",
       available: true,
       featured: false,
-      category: "Snacks",
+      category: "Pastries",
     },
     {
       name: "Puff Puff - 30 Pieces",
@@ -226,7 +226,7 @@ async function main() {
         "https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=400&h=400&fit=crop",
       available: true,
       featured: false,
-      category: "Snacks",
+      category: "Pastries",
     },
 
     // Small Chops Platter
@@ -240,7 +240,7 @@ async function main() {
         "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=400&h=400&fit=crop",
       available: true,
       featured: true,
-      category: "Platters",
+      category: "Nigerian Foods",
     },
 
     // Cakes
@@ -260,6 +260,28 @@ async function main() {
       slug: "custom-cake-6inch",
       description: "6 inch, 2 layers, 1 flavor",
       price: 50,
+      image:
+        "https://images.unsplash.com/photo-1464349095431-e9a21285b5f3?w=400&h=400&fit=crop",
+      available: true,
+      featured: false,
+      category: "Cakes",
+    },
+    {
+      name: "Custom Cake - 8 Inch (2 Layers)",
+      slug: "custom-cake-8inch",
+      description: "8 inch, 2 layers, 1 flavor",
+      price: 70,
+      image:
+        "https://images.unsplash.com/photo-1464349095431-e9a21285b5f3?w=400&h=400&fit=crop",
+      available: true,
+      featured: false,
+      category: "Cakes",
+    },
+    {
+      name: "Custom Cake - 10 Inch (3 Layers)",
+      slug: "custom-cake-10inch",
+      description: "10 inch, 3 layers, 1 flavor",
+      price: 95,
       image:
         "https://images.unsplash.com/photo-1464349095431-e9a21285b5f3?w=400&h=400&fit=crop",
       available: true,

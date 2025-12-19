@@ -6,7 +6,7 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useCart } from "@/store/cart-store";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice, slugify } from "@/lib/utils";
 import {
   ArrowRight,
   ShoppingCart,
@@ -99,28 +99,16 @@ function HeroHighlights() {
 function CategoriesSection() {
   const categories = [
     {
-      name: "Rice Dishes",
+      name: "Nigerian Foods",
       image:
         "https://images.unsplash.com/photo-1516684732162-798a0062be99?w=400&q=80",
-      href: "/shop?category=Rice%201L",
-    },
-    {
-      name: "Proteins",
-      image:
-        "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=400&q=80",
-      href: "/shop?category=Proteins",
+      href: "/shop?category=Nigerian%20Foods",
     },
     {
       name: "Pastries",
       image:
         "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400&q=80",
       href: "/shop?category=Pastries",
-    },
-    {
-      name: "Platters",
-      image:
-        "https://images.unsplash.com/photo-1511690743698-d9d85f2fbf38?w=400&q=80",
-      href: "/shop?category=Platters",
     },
     {
       name: "Cakes",
@@ -199,53 +187,54 @@ function FeaturedProducts() {
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto"
         >
           {products.map((product) => (
-            <div
-              key={product.id}
-              className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300"
-            >
-              <div className="relative aspect-square bg-gray-100">
-                <Image
-                  src={product.image}
-                  alt={product.name}
-                  fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-              </div>
-              <div className="p-4 sm:p-5 lg:p-6">
-                <Badge
-                  variant="secondary"
-                  className="mb-2 text-[10px] sm:text-xs"
-                >
-                  {product.category}
-                </Badge>
-                <h3 className="font-heading text-base sm:text-lg lg:text-xl font-bold text-charcoal-black mb-2 line-clamp-2">
-                  {product.name}
-                </h3>
-                <p className="text-gray-600 text-xs sm:text-sm mb-3 sm:mb-4 line-clamp-2">
-                  {product.description}
-                </p>
-                <div className="flex items-center justify-between gap-2">
-                  <p className="font-heading text-lg sm:text-xl lg:text-2xl font-bold text-honey-gold">
-                    {formatPrice(product.price)}
-                  </p>
-                  <Button
-                    size="sm"
-                    onClick={() =>
-                      addItem({
-                        productId: product.id,
-                        name: product.name,
-                        price: product.price,
-                        imageUrl: product.image,
-                      })
-                    }
-                    className="active:scale-95 shrink-0"
+            <Link key={product.id} href={`/shop/${slugify(product.name)}`}>
+              <div className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer">
+                <div className="relative aspect-square bg-gray-100">
+                  <Image
+                    src={product.image}
+                    alt={product.name}
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                </div>
+                <div className="p-4 sm:p-5 lg:p-6">
+                  <Badge
+                    variant="secondary"
+                    className="mb-2 text-[10px] sm:text-xs"
                   >
-                    <ShoppingCart className="h-4 w-4 sm:mr-2" />
-                    <span className="hidden sm:inline">Add</span>
-                  </Button>
+                    {product.category}
+                  </Badge>
+                  <h3 className="font-heading text-base sm:text-lg lg:text-xl font-bold text-charcoal-black mb-2 line-clamp-2">
+                    {product.name}
+                  </h3>
+                  <p className="text-gray-600 text-xs sm:text-sm mb-3 sm:mb-4 line-clamp-2">
+                    {product.description}
+                  </p>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="font-heading text-lg sm:text-xl lg:text-2xl font-bold text-honey-gold">
+                      {formatPrice(product.price)}
+                    </p>
+                    <Button
+                      size="sm"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        addItem({
+                          productId: product.id,
+                          name: product.name,
+                          price: product.price,
+                          imageUrl: product.image,
+                        });
+                      }}
+                      className="active:scale-95 shrink-0"
+                    >
+                      <ShoppingCart className="h-4 w-4 sm:mr-2" />
+                      <span className="hidden sm:inline">Add</span>
+                    </Button>
+                  </div>
                 </div>
               </div>
-            </div>
+            </Link>
           ))}
         </StaggerChildren>
 
