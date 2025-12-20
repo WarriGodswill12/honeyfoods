@@ -9,6 +9,14 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -26,6 +34,7 @@ import {
   ImageIcon,
   AlertCircle,
   Trash,
+  LayoutDashboard,
 } from "lucide-react";
 import Image from "next/image";
 import type { Product } from "@/types/product";
@@ -208,6 +217,25 @@ export default function ProductsPage() {
 
   return (
     <div className="p-8">
+      {" "}
+      {/* Breadcrumb */}
+      <div className="mb-6">
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink href="/admin/dashboard">
+                <LayoutDashboard className="h-4 w-4" />
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage className="font-semibold">
+                Products
+              </BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+      </div>
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
         <div>
@@ -260,7 +288,6 @@ export default function ProductsPage() {
           </Button>
         </div>
       </div>
-
       {/* Search */}
       <div className="mb-6">
         <div className="relative">
@@ -274,7 +301,6 @@ export default function ProductsPage() {
           />
         </div>
       </div>
-
       {/* Products Grid */}
       {filteredProducts.length === 0 ? (
         <Card className="p-12 text-center">
@@ -360,7 +386,6 @@ export default function ProductsPage() {
           ))}
         </div>
       )}
-
       {/* Add/Edit Modal */}
       <Modal
         open={isModalOpen}

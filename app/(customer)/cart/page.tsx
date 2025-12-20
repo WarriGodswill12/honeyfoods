@@ -2,7 +2,15 @@
 
 import { useCart } from "@/store/cart-store";
 import { Button } from "@/components/ui/button";
-import { Trash2, Plus, Minus, ShoppingBag } from "lucide-react";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import { Trash2, Plus, Minus, ShoppingBag, Home } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 import Image from "next/image";
 import Link from "next/link";
@@ -41,6 +49,23 @@ export default function CartPage() {
 
   return (
     <div className="container mx-auto px-4 py-6 sm:py-8 sm:px-6 lg:px-8">
+      {/* Breadcrumb */}
+      <div className="mb-6">
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink href="/">
+                <Home className="h-4 w-4" />
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage className="font-semibold">Cart</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+      </div>
+
       <h1 className="font-heading mb-6 sm:mb-8 text-2xl sm:text-3xl font-bold text-charcoal-black">
         Shopping Cart
       </h1>

@@ -12,6 +12,7 @@ import {
   LogOut,
   Menu,
   X,
+  ImageIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
@@ -27,6 +28,11 @@ const navItems = [
     label: "Products",
     href: "/admin/products",
     icon: Package,
+  },
+  {
+    label: "Gallery",
+    href: "/admin/gallery",
+    icon: ImageIcon,
   },
   {
     label: "Orders",

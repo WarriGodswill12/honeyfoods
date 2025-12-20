@@ -6,6 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -14,7 +22,7 @@ import {
 } from "@/components/ui/select";
 import { useCart } from "@/store/cart-store";
 import { formatPrice, slugify } from "@/lib/utils";
-import { ShoppingCart, Search } from "lucide-react";
+import { ShoppingCart, Search, Home } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import type { Product } from "@/types/product";
@@ -101,6 +109,33 @@ function ShopPageContent() {
 
   return (
     <div className="container mx-auto px-4 py-6 sm:py-8 lg:py-10 sm:px-6 lg:px-8">
+      {/* Breadcrumb */}
+      <div className="mb-6">
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink href="/">
+                <Home className="h-4 w-4" />
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage className="font-semibold">Shop</BreadcrumbPage>
+            </BreadcrumbItem>
+            {selectedCategory && selectedCategory !== "all" && (
+              <>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbPage className="font-semibold text-honey-gold">
+                    {selectedCategory}
+                  </BreadcrumbPage>
+                </BreadcrumbItem>
+              </>
+            )}
+          </BreadcrumbList>
+        </Breadcrumb>
+      </div>
+
       {/* Header */}
       <FadeIn>
         <div className="mb-8 sm:mb-10 text-center">

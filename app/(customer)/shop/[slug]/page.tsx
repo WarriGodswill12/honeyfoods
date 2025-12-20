@@ -8,6 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import {
   Carousel,
   CarouselContent,
   CarouselItem,
@@ -30,6 +38,7 @@ import {
   Minus,
   Package,
   Ruler,
+  Home,
 } from "lucide-react";
 import { FadeIn, SlideInUp } from "@/components/shared/animated";
 import type { Product } from "@/types/product";
@@ -176,6 +185,43 @@ export default function ProductDetailPage() {
 
   return (
     <div className="container mx-auto px-4 py-6 sm:py-8 lg:py-10 sm:px-6 lg:px-8">
+      {/* Breadcrumb */}
+      <div className="mb-6">
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink href="/">
+                <Home className="h-4 w-4" />
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbLink href="/shop">Shop</BreadcrumbLink>
+            </BreadcrumbItem>
+            {product.category && (
+              <>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbLink
+                    href={`/shop?category=${encodeURIComponent(
+                      product.category
+                    )}`}
+                  >
+                    {product.category}
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+              </>
+            )}
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage className="font-semibold text-honey-gold">
+                {product.name}
+              </BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+      </div>
+
       {/* Back Button */}
       <FadeIn>
         <Link

@@ -13,145 +13,170 @@ import {
   Package,
   Clock,
   Sparkles,
+  ChevronLeft,
+  ChevronRight,
   Star,
 } from "lucide-react";
 import { FadeIn, StaggerChildren } from "@/components/shared/animated";
 import type { Product } from "@/types/product";
 
-// Hero Product Highlights
-function HeroHighlights() {
-  const highlights = [
+// Hero Section with Background Image Slider
+function HeroSection() {
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  const slides = [
     {
-      title: "Golden. Fluffy. Irresistible.",
-      subtitle: "Puff Puff",
-      cta: "Grab Puff Puff",
-      href: "/shop?category=Snacks",
       image:
-        "https://images.unsplash.com/photo-1603532648955-039310d9ed75?w=800&q=80",
+        "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=1920&q=80",
+      alt: "Jollof Rice",
     },
     {
-      title: "Crisp. Bold. Addictive.",
-      subtitle: "Chicken Wings",
-      cta: "Get Your Wings",
-      href: "/shop?category=Proteins",
       image:
-        "https://images.unsplash.com/photo-1608039829572-78524f79c4c7?w=800&q=80",
+        "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=1920&q=80",
+      alt: "Custom Cakes",
     },
     {
-      title: "Flavour in Every Bite",
-      subtitle: "Mini Pastries",
-      cta: "Order Pastries",
-      href: "/shop?category=Mini%20Pastries",
       image:
-        "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=800&q=80",
+        "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=1920&q=80",
+      alt: "Fresh Pastries",
     },
     {
-      title: "Spiced to Perfection",
-      subtitle: "Nigerian Rice",
-      cta: "Taste the Rice",
-      href: "/shop?category=Rice%201L",
       image:
-        "https://images.unsplash.com/photo-1516684732162-798a0062be99?w=800&q=80",
+        "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=1920&q=80",
+      alt: "Party Platter",
     },
   ];
 
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % slides.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const nextSlide = () => {
+    setCurrentSlide((prev) => (prev + 1) % slides.length);
+  };
+
+  const prevSlide = () => {
+    setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
+  };
+
   return (
-    <section className="py-8 sm:py-10 lg:py-12 bg-soft-cream">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-12">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
-          {highlights.map((highlight, index) => (
-            <FadeIn key={index} delay={index * 0.1}>
-              <Link href={highlight.href}>
-                <div className="group relative overflow-hidden rounded-xl sm:rounded-2xl aspect-3/4 bg-charcoal-black shadow-md">
-                  <Image
-                    src={highlight.image}
-                    alt={highlight.subtitle}
-                    fill
-                    className="object-cover opacity-70 group-hover:opacity-80 group-hover:scale-105 transition-all duration-500"
-                  />
-                  <div className="absolute inset-0 bg-linear-to-t from-charcoal-black/90 via-charcoal-black/40 to-transparent" />
-                  <div className="absolute inset-0 flex flex-col justify-end p-3 sm:p-4 lg:p-6">
-                    <p className="text-honey-gold font-semibold text-[10px] sm:text-xs lg:text-sm mb-1 sm:mb-2 uppercase tracking-wider">
-                      {highlight.subtitle}
-                    </p>
-                    <h3 className="text-white font-heading text-sm sm:text-lg lg:text-2xl font-bold mb-2 sm:mb-3 lg:mb-4 leading-tight">
-                      {highlight.title}
-                    </h3>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full text-xs sm:text-sm bg-white/10 border-white/20 text-white hover:bg-white hover:text-charcoal-black backdrop-blur-sm py-1.5 sm:py-2"
-                    >
-                      {highlight.cta}
-                    </Button>
-                  </div>
-                </div>
-              </Link>
-            </FadeIn>
-          ))}
+    <section className="relative h-[70vh] sm:h-[80vh] lg:h-screen overflow-hidden">
+      {/* Background Slider */}
+      {slides.map((slide, index) => (
+        <div
+          key={index}
+          className={`absolute inset-0 transition-opacity duration-1000 ${
+            index === currentSlide ? "opacity-100" : "opacity-0"
+          }`}
+        >
+          <img
+            src={slide.image}
+            alt={slide.alt}
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-charcoal-black/60" />
         </div>
+      ))}
+
+      {/* Content Overlay */}
+      <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-12 h-full flex items-center justify-center">
+        <FadeIn className="text-center max-w-4xl">
+          <h1 className="font-heading text-3xl sm:text-2xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-white mb-4 sm:mb-6 leading-tight">
+            Authentic Flavours.
+            <span className="text-honey-gold block mt-2">Delivered Fresh.</span>
+          </h1>
+
+          <p className="text-lg sm:text-xl md:text-2xl text-white/90 mb-8 sm:mb-10 leading-relaxed max-w-2xl mx-auto">
+            Premium Nigerian cuisine and pastries crafted with love, delivered
+            to your doorstep
+          </p>
+          <Link href="/shop">
+            <Button
+              size="lg"
+              className="text-base sm:text-lg px-8 py-6 shadow-2xl hover:scale-105 transition-transform font-semibold"
+            >
+              Explore Our Menu
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+          </Link>
+        </FadeIn>
       </div>
     </section>
   );
 }
 
 // Categories Section
+// Our Menu Section
 function CategoriesSection() {
   const categories = [
     {
       name: "Nigerian Foods",
+      description: "Authentic West African flavors",
       image:
-        "https://images.unsplash.com/photo-1516684732162-798a0062be99?w=400&q=80",
+        "https://images.unsplash.com/photo-1516684732162-798a0062be99?w=800&q=80",
       href: "/shop?category=Nigerian%20Foods",
     },
     {
       name: "Pastries",
+      description: "Freshly baked daily",
       image:
-        "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400&q=80",
+        "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=800&q=80",
       href: "/shop?category=Pastries",
     },
     {
       name: "Cakes",
+      description: "Custom made for your special moments",
       image:
-        "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400&q=80",
+        "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=800&q=80",
       href: "/shop?category=Cakes",
     },
   ];
 
   return (
-    <section className="py-20 bg-white">
-      <div className="container mx-auto px-6 lg:px-12">
-        <FadeIn className="text-center mb-12">
-          <h2 className="font-heading text-4xl md:text-5xl font-bold text-charcoal-black mb-4">
+    <section className="py-16 sm:py-20 lg:py-24 bg-linear-to-b from-white to-gray-50">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-12">
+        <FadeIn className="text-center mb-12 sm:mb-16">
+          <h2 className="font-heading text-4xl sm:text-5xl lg:text-6xl font-bold text-charcoal-black mb-5">
             Our Menu
           </h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+          <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto">
             Explore our curated selection of authentic, flavor-packed dishes
           </p>
         </FadeIn>
 
-        <StaggerChildren
-          delay={0.1}
-          className="flex flex-wrap justify-center gap-4 max-w-4xl mx-auto"
-        >
-          {categories.map((category) => (
-            <Link key={category.name} href={category.href}>
-              <div className="group relative overflow-hidden rounded-full w-32 h-32 ring-2 ring-honey-gold/20 hover:ring-honey-gold transition-all duration-300">
-                <Image
-                  src={category.image}
-                  alt={category.name}
-                  fill
-                  className="object-cover group-hover:scale-110 transition-transform duration-500"
-                />
-                <div className="absolute inset-0 bg-linear-to-t from-charcoal-black/80 to-transparent flex items-end justify-center pb-2 sm:pb-3">
-                  <p className="text-white font-semibold text-xs sm:text-sm text-center px-1 sm:px-2">
-                    {category.name}
-                  </p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 max-w-6xl mx-auto">
+          {categories.map((category, index) => (
+            <StaggerChildren key={category.name} delay={index * 0.1}>
+              <Link href={category.href}>
+                <div className="group relative overflow-hidden rounded-3xl aspect-4/5 shadow-xl hover:shadow-2xl transition-all duration-500">
+                  <img
+                    src={category.image}
+                    alt={category.name}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                  />
+                  <div className="absolute inset-0 bg-linear-to-t from-charcoal-black via-charcoal-black/40 to-transparent" />
+                  <div className="absolute inset-0 flex flex-col justify-end p-6 sm:p-8">
+                    <h3 className="font-heading text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-2">
+                      {category.name}
+                    </h3>
+                    <p className="text-white/90 text-sm sm:text-base mb-4">
+                      {category.description}
+                    </p>
+                    <Button
+                      variant="outline"
+                      className="w-full bg-white/10 border-white/30 text-white hover:bg-white hover:text-charcoal-black backdrop-blur-sm font-semibold"
+                    >
+                      Explore {category.name}
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            </Link>
+              </Link>
+            </StaggerChildren>
           ))}
-        </StaggerChildren>
+        </div>
       </div>
     </section>
   );
@@ -316,44 +341,47 @@ function HowItWorks() {
 }
 
 // About Section with Image
+// Welcome to Honey Foods Section
 function AboutSection() {
   return (
-    <section className="py-12 sm:py-16 lg:py-20 bg-soft-cream">
+    <section className="py-16 sm:py-20 lg:py-24 bg-white">
       <div className="container mx-auto px-4 sm:px-6 lg:px-12">
-        <div className="flex flex-col lg:flex-row items-center gap-8 sm:gap-10 lg:gap-12 max-w-6xl mx-auto">
+        <div className="flex flex-col lg:flex-row items-center gap-10 lg:gap-16 max-w-7xl mx-auto">
           <FadeIn className="lg:w-1/2 w-full">
-            <div className="relative aspect-4/3 rounded-2xl sm:rounded-3xl overflow-hidden shadow-lg sm:shadow-2xl">
-              <Image
-                src="https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=800&q=80"
+            <div className="relative aspect-4/3 rounded-3xl overflow-hidden shadow-2xl">
+              <img
+                src="https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=1200&q=80"
                 alt="About Honey Foods"
-                fill
-                className="object-cover"
+                className="w-full h-full object-cover"
               />
             </div>
           </FadeIn>
 
           <FadeIn delay={0.2} className="lg:w-1/2 w-full">
-            <h2 className="font-heading text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-charcoal-black mb-4 sm:mb-5 lg:mb-6">
+            <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-charcoal-black mb-6 leading-tight">
               Welcome to Honey Foods
             </h2>
-            <p className="text-sm sm:text-base lg:text-lg text-gray-700 leading-relaxed mb-4 sm:mb-5 lg:mb-6">
-              At Honey Foods, we believe that great food should be both a visual
-              masterpiece and a flavourful journey. Specialising in authentic
-              Nigerian cuisine and premium pastries, we blend the refined art of
-              presentation with the vibrant soul of West African flavors.
-            </p>
-            <p className="text-sm sm:text-base lg:text-lg text-gray-700 leading-relaxed mb-6 sm:mb-7 lg:mb-8">
-              Every dish is crafted with passion, using only the finest
-              ingredients and time-honored recipes passed down through
-              generations.
-            </p>
+            <div className="space-y-5 text-gray-700">
+              <p className="text-base sm:text-lg lg:text-xl leading-relaxed">
+                At Honey Foods, we believe that great food should be both a
+                visual masterpiece and a flavourful journey. Specialising in
+                authentic Nigerian cuisine and premium pastries, we blend the
+                refined art of presentation with the vibrant soul of West
+                African flavors.
+              </p>
+              <p className="text-base sm:text-lg lg:text-xl leading-relaxed">
+                Every dish is crafted with passion, using only the finest
+                ingredients and time-honored recipes passed down through
+                generations.
+              </p>
+            </div>
             <Link href="/about">
               <Button
                 size="lg"
-                className="active:scale-95 text-sm sm:text-base"
+                className="mt-8 text-base font-semibold hover:scale-105 transition-transform"
               >
                 Find Out More
-                <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
+                <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
           </FadeIn>
@@ -363,225 +391,105 @@ function AboutSection() {
   );
 }
 
-// Gallery Section with Masonry Grid Layout
+// Gallery Section with Auto-Sliding Slideshow
 function GallerySection() {
-  const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(
-    null
-  );
+  const [currentSlide, setCurrentSlide] = useState(0);
 
   const galleryImages = [
     {
       id: 1,
-      url: "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=800&q=80",
+      url: "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=1920&q=80",
       alt: "Delicious Jollof Rice",
-      height: "h-72",
     },
     {
       id: 2,
-      url: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=800&q=80",
+      url: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=1920&q=80",
       alt: "Beautiful Custom Cake",
-      height: "h-80",
     },
     {
       id: 3,
-      url: "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=800&q=80",
+      url: "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=1920&q=80",
       alt: "Fresh Meat Pies",
-      height: "h-64",
     },
     {
       id: 4,
-      url: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=800&q=80",
+      url: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=1920&q=80",
       alt: "Party Platter",
-      height: "h-96",
     },
     {
       id: 5,
-      url: "https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=800&q=80",
+      url: "https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=1920&q=80",
       alt: "Golden Puff Puff",
-      height: "h-72",
     },
     {
       id: 6,
-      url: "https://images.unsplash.com/photo-1464349095431-e9a21285b5f3?w=800&q=80",
+      url: "https://images.unsplash.com/photo-1464349095431-e9a21285b5f3?w=1920&q=80",
       alt: "Elegant Wedding Cake",
-      height: "h-80",
     },
   ];
 
-  const openLightbox = (index: number) => {
-    setSelectedImageIndex(index);
-  };
-
-  const closeLightbox = () => {
-    setSelectedImageIndex(null);
-  };
-
-  const goToNext = () => {
-    if (selectedImageIndex !== null) {
-      setSelectedImageIndex((selectedImageIndex + 1) % galleryImages.length);
-    }
-  };
-
-  const goToPrevious = () => {
-    if (selectedImageIndex !== null) {
-      setSelectedImageIndex(
-        (selectedImageIndex - 1 + galleryImages.length) % galleryImages.length
-      );
-    }
-  };
-
-  const handleKeyDown = (e: KeyboardEvent) => {
-    if (selectedImageIndex === null) return;
-    if (e.key === "Escape") closeLightbox();
-    if (e.key === "ArrowRight") goToNext();
-    if (e.key === "ArrowLeft") goToPrevious();
-  };
-
   useEffect(() => {
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedImageIndex]);
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % galleryImages.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const nextSlide = () => {
+    setCurrentSlide((prev) => (prev + 1) % galleryImages.length);
+  };
+
+  const prevSlide = () => {
+    setCurrentSlide(
+      (prev) => (prev - 1 + galleryImages.length) % galleryImages.length
+    );
+  };
 
   return (
-    <section className="py-12 sm:py-16 lg:py-20 bg-soft-cream">
+    <section className="py-16 sm:py-20 lg:py-24 bg-linear-to-b from-soft-cream to-white">
       <div className="container mx-auto px-4 sm:px-6 lg:px-12">
-        <FadeIn className="text-center mb-8 sm:mb-12">
-          <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-bold text-charcoal-black mb-3 sm:mb-4">
+        <FadeIn className="text-center mb-10 sm:mb-14">
+          <h2 className="font-heading text-4xl sm:text-5xl lg:text-6xl font-bold text-charcoal-black mb-4">
             Our Gallery
           </h2>
-          <p className="text-base sm:text-lg lg:text-xl text-gray-600 max-w-2xl mx-auto">
+          <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto">
             A taste of what we create with love and passion
           </p>
         </FadeIn>
 
-        {/* Masonry Grid Layout */}
-        <div className="columns-2 sm:columns-3 lg:columns-4 gap-3 sm:gap-4 space-y-3 sm:space-y-4">
-          {galleryImages.map((image, index) => (
-            <StaggerChildren key={image.id} delay={index * 0.1}>
+        {/* Slideshow */}
+        <div className="relative max-w-5xl mx-auto">
+          <div className="relative h-100 sm:h-125 lg:h-150 rounded-3xl overflow-hidden shadow-2xl">
+            {galleryImages.map((image, index) => (
               <div
-                className="group relative overflow-hidden rounded-2xl shadow-md hover:shadow-2xl transition-all duration-500 cursor-pointer break-inside-avoid mb-3 sm:mb-4"
-                onClick={() => openLightbox(index)}
+                key={image.id}
+                className={`absolute inset-0 transition-opacity duration-1000 ${
+                  index === currentSlide ? "opacity-100" : "opacity-0"
+                }`}
               >
-                <div className={`relative w-full ${image.height}`}>
-                  <img
-                    src={image.url}
-                    alt={image.alt}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                  />
-                  <div className="absolute inset-0 bg-linear-to-t from-charcoal-black/70 via-charcoal-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                    <div className="absolute bottom-4 left-4 right-4">
-                      <p className="text-white font-semibold text-sm sm:text-base">
-                        {image.alt}
-                      </p>
-                    </div>
-                  </div>
+                <img
+                  src={image.url}
+                  alt={image.alt}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute bottom-0 left-0 right-0 bg-linear-to-t from-charcoal-black/90 via-charcoal-black/50 to-transparent p-8">
+                  <p className="text-white font-heading text-2xl sm:text-3xl lg:text-4xl font-bold">
+                    {image.alt}
+                  </p>
                 </div>
               </div>
-            </StaggerChildren>
-          ))}
+            ))}
+          </div>
         </div>
 
-        {/* Lightbox Modal */}
-        {selectedImageIndex !== null && (
-          <div
-            className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4"
-            onClick={closeLightbox}
-          >
-            <button
-              onClick={closeLightbox}
-              className="absolute top-4 right-4 text-white hover:text-honey-gold transition-colors p-2"
-              aria-label="Close"
-            >
-              <svg
-                className="w-8 h-8"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
-
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                goToPrevious();
-              }}
-              className="absolute left-4 text-white hover:text-honey-gold transition-colors p-2"
-              aria-label="Previous"
-            >
-              <svg
-                className="w-8 h-8"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 19l-7-7 7-7"
-                />
-              </svg>
-            </button>
-
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                goToNext();
-              }}
-              className="absolute right-4 text-white hover:text-honey-gold transition-colors p-2"
-              aria-label="Next"
-            >
-              <svg
-                className="w-8 h-8"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 5l7 7-7 7"
-                />
-              </svg>
-            </button>
-
-            <div
-              className="relative max-w-6xl max-h-[90vh] w-full"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <img
-                src={galleryImages[selectedImageIndex].url}
-                alt={galleryImages[selectedImageIndex].alt}
-                className="w-full h-full object-contain rounded-lg"
-              />
-              <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white p-4 rounded-b-lg">
-                <p className="text-center text-lg font-semibold">
-                  {galleryImages[selectedImageIndex].alt}
-                </p>
-                <p className="text-center text-sm text-gray-300 mt-1">
-                  {selectedImageIndex + 1} / {galleryImages.length}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div className="text-center mt-8 sm:mt-12">
+        <div className="text-center mt-12">
           <Link href="/shop">
             <Button
               size="lg"
-              className="shadow-lg active:scale-95 text-sm sm:text-base"
+              className="shadow-lg hover:scale-105 transition-transform text-base font-semibold"
             >
               View All Products
-              <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
+              <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
           </Link>
         </div>
@@ -593,56 +501,20 @@ function GallerySection() {
 export default function HomePage() {
   return (
     <div className="flex flex-col">
-      {/* Main Hero */}
-      <section className="relative bg-linear-to-br from-honey-gold/10 via-soft-cream to-warm-orange/10 py-16 sm:py-20 lg:py-24 xl:py-32">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-12">
-          <FadeIn className="text-center max-w-4xl mx-auto">
-            <Badge
-              variant="secondary"
-              className="mb-4 sm:mb-6 text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2"
-            >
-              Order before Thursday 3pm for weekend delivery
-            </Badge>
-            <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-charcoal-black mb-4 sm:mb-5 lg:mb-6 leading-tight px-2">
-              Authentic Flavours.
-              <span className="text-honey-gold block mt-1 sm:mt-2">
-                Delivered Fresh.
-              </span>
-            </h1>
-            <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-gray-700 mb-6 sm:mb-8 lg:mb-10 leading-relaxed px-4">
-              Premium Nigerian cuisine and pastries crafted with love, delivered
-              to your doorstep
-            </p>
-            <Link href="/shop">
-              <Button
-                size="lg"
-                className="text-sm sm:text-base lg:text-lg px-6 sm:px-8 py-4 sm:py-5 lg:py-6 shadow-xl active:scale-95"
-              >
-                Explore Our Menu
-                <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6" />
-              </Button>
-            </Link>
-          </FadeIn>
-        </div>
-      </section>
+      {/* Hero Section with Background Image Slider */}
+      <HeroSection />
 
-      {/* Hero Product Highlights */}
-      <HeroHighlights />
+      {/* Welcome to Honey Foods */}
+      <AboutSection />
 
-      {/* Categories */}
+      {/* Gallery Slideshow */}
+      <GallerySection />
+
+      {/* Our Menu */}
       <CategoriesSection />
-
-      {/* Featured Products */}
-      <FeaturedProducts />
 
       {/* How It Works */}
       <HowItWorks />
-
-      {/* About Section */}
-      <AboutSection />
-
-      {/* Gallery */}
-      <GallerySection />
     </div>
   );
 }
