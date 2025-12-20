@@ -363,7 +363,7 @@ function AboutSection() {
   );
 }
 
-// Gallery Section with Bento Grid Layout
+// Gallery Section with Masonry Grid Layout
 function GallerySection() {
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(
     null
@@ -372,39 +372,39 @@ function GallerySection() {
   const galleryImages = [
     {
       id: 1,
-      url: "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=1200&q=80",
+      url: "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=800&q=80",
       alt: "Delicious Jollof Rice",
-      span: "col-span-2 row-span-2",
+      height: "h-72",
     },
     {
       id: 2,
-      url: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=1200&q=80",
+      url: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=800&q=80",
       alt: "Beautiful Custom Cake",
-      span: "col-span-1 row-span-1",
+      height: "h-80",
     },
     {
       id: 3,
-      url: "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=1200&q=80",
+      url: "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=800&q=80",
       alt: "Fresh Meat Pies",
-      span: "col-span-1 row-span-1",
+      height: "h-64",
     },
     {
       id: 4,
-      url: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=1200&q=80",
+      url: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=800&q=80",
       alt: "Party Platter",
-      span: "col-span-1 row-span-2",
+      height: "h-96",
     },
     {
       id: 5,
-      url: "https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=1200&q=80",
+      url: "https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=800&q=80",
       alt: "Golden Puff Puff",
-      span: "col-span-1 row-span-1",
+      height: "h-72",
     },
     {
       id: 6,
-      url: "https://images.unsplash.com/photo-1464349095431-e9a21285b5f3?w=1200&q=80",
+      url: "https://images.unsplash.com/photo-1464349095431-e9a21285b5f3?w=800&q=80",
       alt: "Elegant Wedding Cake",
-      span: "col-span-2 row-span-1",
+      height: "h-80",
     },
   ];
 
@@ -454,15 +454,15 @@ function GallerySection() {
           </p>
         </FadeIn>
 
-        {/* Bento Grid Layout */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 auto-rows-[200px] sm:auto-rows-[250px]">
+        {/* Masonry Grid Layout */}
+        <div className="columns-2 sm:columns-3 lg:columns-4 gap-3 sm:gap-4 space-y-3 sm:space-y-4">
           {galleryImages.map((image, index) => (
             <StaggerChildren key={image.id} delay={index * 0.1}>
               <div
-                className={`${image.span} group relative overflow-hidden rounded-2xl shadow-md hover:shadow-2xl transition-all duration-500 cursor-pointer`}
+                className="group relative overflow-hidden rounded-2xl shadow-md hover:shadow-2xl transition-all duration-500 cursor-pointer break-inside-avoid mb-3 sm:mb-4"
                 onClick={() => openLightbox(index)}
               >
-                <div className="relative w-full h-full">
+                <div className={`relative w-full ${image.height}`}>
                   <img
                     src={image.url}
                     alt={image.alt}
