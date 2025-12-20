@@ -431,7 +431,7 @@ function GallerySection() {
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % galleryImages.length);
-    }, 5000);
+    }, 2500);
     return () => clearInterval(timer);
   }, []);
 
