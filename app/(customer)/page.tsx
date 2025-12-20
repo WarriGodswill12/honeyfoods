@@ -363,65 +363,228 @@ function AboutSection() {
   );
 }
 
-// Newsletter Section
-function NewsletterSection() {
-  const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<
-    "idle" | "loading" | "success" | "error"
-  >("idle");
+// Gallery Section with Bento Grid Layout
+function GallerySection() {
+  const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(
+    null
+  );
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setStatus("loading");
+  const galleryImages = [
+    {
+      id: 1,
+      url: "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=1200&q=80",
+      alt: "Delicious Jollof Rice",
+      span: "col-span-2 row-span-2",
+    },
+    {
+      id: 2,
+      url: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=1200&q=80",
+      alt: "Beautiful Custom Cake",
+      span: "col-span-1 row-span-1",
+    },
+    {
+      id: 3,
+      url: "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=1200&q=80",
+      alt: "Fresh Meat Pies",
+      span: "col-span-1 row-span-1",
+    },
+    {
+      id: 4,
+      url: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=1200&q=80",
+      alt: "Party Platter",
+      span: "col-span-1 row-span-2",
+    },
+    {
+      id: 5,
+      url: "https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=1200&q=80",
+      alt: "Golden Puff Puff",
+      span: "col-span-1 row-span-1",
+    },
+    {
+      id: 6,
+      url: "https://images.unsplash.com/photo-1464349095431-e9a21285b5f3?w=1200&q=80",
+      alt: "Elegant Wedding Cake",
+      span: "col-span-2 row-span-1",
+    },
+  ];
 
-    // Simulate API call
-    setTimeout(() => {
-      setStatus("success");
-      setEmail("");
-      setTimeout(() => setStatus("idle"), 3000);
-    }, 1000);
+  const openLightbox = (index: number) => {
+    setSelectedImageIndex(index);
   };
 
+  const closeLightbox = () => {
+    setSelectedImageIndex(null);
+  };
+
+  const goToNext = () => {
+    if (selectedImageIndex !== null) {
+      setSelectedImageIndex((selectedImageIndex + 1) % galleryImages.length);
+    }
+  };
+
+  const goToPrevious = () => {
+    if (selectedImageIndex !== null) {
+      setSelectedImageIndex(
+        (selectedImageIndex - 1 + galleryImages.length) % galleryImages.length
+      );
+    }
+  };
+
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (selectedImageIndex === null) return;
+    if (e.key === "Escape") closeLightbox();
+    if (e.key === "ArrowRight") goToNext();
+    if (e.key === "ArrowLeft") goToPrevious();
+  };
+
+  useEffect(() => {
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedImageIndex]);
+
   return (
-    <section className="py-12 sm:py-16 lg:py-20 bg-charcoal-black">
+    <section className="py-12 sm:py-16 lg:py-20 bg-soft-cream">
       <div className="container mx-auto px-4 sm:px-6 lg:px-12">
-        <FadeIn className="max-w-2xl mx-auto text-center">
-          <h2 className="font-heading text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-3 sm:mb-4">
-            Subscribe to Our Newsletter
+        <FadeIn className="text-center mb-8 sm:mb-12">
+          <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-bold text-charcoal-black mb-3 sm:mb-4">
+            Our Gallery
           </h2>
-          <p className="text-gray-300 text-sm sm:text-base lg:text-lg mb-6 sm:mb-8 px-4">
-            Join the Honey Foods family and enjoy 10% off your next order. Be
-            the first to discover new flavours and exclusive treats.
+          <p className="text-base sm:text-lg lg:text-xl text-gray-600 max-w-2xl mx-auto">
+            A taste of what we create with love and passion
           </p>
-
-          <form
-            onSubmit={handleSubmit}
-            className="flex flex-col sm:flex-row gap-3"
-          >
-            <input
-              type="email"
-              placeholder="Enter your email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="flex-1 px-4 sm:px-6 py-3 sm:py-4 text-sm sm:text-base rounded-full text-charcoal-black focus:outline-none focus:ring-2 focus:ring-honey-gold"
-            />
-            <Button
-              type="submit"
-              size="lg"
-              disabled={status === "loading"}
-              className="rounded-full px-6 sm:px-8 active:scale-95 text-sm sm:text-base"
-            >
-              {status === "loading" ? "Subscribing..." : "Subscribe"}
-            </Button>
-          </form>
-
-          {status === "success" && (
-            <p className="mt-4 text-honey-gold font-semibold">
-              Thanks for subscribing! Check your email for your discount code.
-            </p>
-          )}
         </FadeIn>
+
+        {/* Bento Grid Layout */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 auto-rows-[200px] sm:auto-rows-[250px]">
+          {galleryImages.map((image, index) => (
+            <StaggerChildren key={image.id} delay={index * 0.1}>
+              <div
+                className={`${image.span} group relative overflow-hidden rounded-2xl shadow-md hover:shadow-2xl transition-all duration-500 cursor-pointer`}
+                onClick={() => openLightbox(index)}
+              >
+                <div className="relative w-full h-full">
+                  <img
+                    src={image.url}
+                    alt={image.alt}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                  />
+                  <div className="absolute inset-0 bg-linear-to-t from-charcoal-black/70 via-charcoal-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                    <div className="absolute bottom-4 left-4 right-4">
+                      <p className="text-white font-semibold text-sm sm:text-base">
+                        {image.alt}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </StaggerChildren>
+          ))}
+        </div>
+
+        {/* Lightbox Modal */}
+        {selectedImageIndex !== null && (
+          <div
+            className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4"
+            onClick={closeLightbox}
+          >
+            <button
+              onClick={closeLightbox}
+              className="absolute top-4 right-4 text-white hover:text-honey-gold transition-colors p-2"
+              aria-label="Close"
+            >
+              <svg
+                className="w-8 h-8"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                goToPrevious();
+              }}
+              className="absolute left-4 text-white hover:text-honey-gold transition-colors p-2"
+              aria-label="Previous"
+            >
+              <svg
+                className="w-8 h-8"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 19l-7-7 7-7"
+                />
+              </svg>
+            </button>
+
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                goToNext();
+              }}
+              className="absolute right-4 text-white hover:text-honey-gold transition-colors p-2"
+              aria-label="Next"
+            >
+              <svg
+                className="w-8 h-8"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+            </button>
+
+            <div
+              className="relative max-w-6xl max-h-[90vh] w-full"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <img
+                src={galleryImages[selectedImageIndex].url}
+                alt={galleryImages[selectedImageIndex].alt}
+                className="w-full h-full object-contain rounded-lg"
+              />
+              <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white p-4 rounded-b-lg">
+                <p className="text-center text-lg font-semibold">
+                  {galleryImages[selectedImageIndex].alt}
+                </p>
+                <p className="text-center text-sm text-gray-300 mt-1">
+                  {selectedImageIndex + 1} / {galleryImages.length}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="text-center mt-8 sm:mt-12">
+          <Link href="/shop">
+            <Button
+              size="lg"
+              className="shadow-lg active:scale-95 text-sm sm:text-base"
+            >
+              View All Products
+              <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
+            </Button>
+          </Link>
+        </div>
       </div>
     </section>
   );
@@ -478,8 +641,8 @@ export default function HomePage() {
       {/* About Section */}
       <AboutSection />
 
-      {/* Newsletter */}
-      <NewsletterSection />
+      {/* Gallery */}
+      <GallerySection />
     </div>
   );
 }
