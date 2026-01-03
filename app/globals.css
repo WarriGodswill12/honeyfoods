@@ -48,19 +48,29 @@
   --color-charcoal-black: #2b2b2b;
 
   /* Font Families */
-  /* You can test different fonts by changing these values:
-     Option 1 (Current): Playfair Display + Montserrat
-     Option 2: Brunelis (--font-brunelis) + Montserrat
-     Option 3: TRYFat (--font-tryfat) + Montserrat
-     Option 4: Mix and match! */
-  --font-heading: var(--font-tryfat);
+  /* ==== FONT TESTING INSTRUCTIONS ====
+     To test each font, comment out the current active line (add //) 
+     and uncomment the font you want to test (remove //)
+     Then save and refresh your browser to see the changes.
+  */
+
+  /* Currently Active: */
+  --font-heading: var(--font-regalorn);
+
+  /* Alternative Options - Uncomment one at a time to test: */
+  /* --font-heading: var(--font-belarin); */
+  /* --font-heading: var(--font-blokna); */
+  /* --font-heading: var(--font-fedro); */
+  /* --font-heading: var(--font-regalorn); */
+  /* --font-heading: var(--font-stay); */
+  /* --font-heading: var(--font-refind); */
+  /* --font-heading: var(--font-poppins); */
+  /* --font-heading: var(--font-playfair); */
+  /* --font-heading: var(--font-brunelis); */
+  /* --font-heading: var(--font-tryfat); */
+
   --font-body: var(--font-montserrat);
   --font-sans: var(--font-montserrat);
-
-  /* Alternative font options - uncomment to test:
-  --font-heading: var(--font-brunelis);
-  --font-heading: var(--font-tryfat);
-  */
   --color-warm-orange: #e06a1f;
   --color-soft-cream: #fafaf8;
 

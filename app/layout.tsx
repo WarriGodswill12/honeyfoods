@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Playfair_Display, Montserrat } from "next/font/google";
+import { Inter, Playfair_Display, Montserrat, Poppins } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
 import { siteConfig } from "@/config/site";
@@ -25,6 +25,13 @@ const montserrat = Montserrat({
   display: "swap",
 });
 
+const poppins = Poppins({
+  variable: "--font-poppins",
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700", "800"],
+  display: "swap",
+});
+
 const brunelis = localFont({
   src: "./fonts/Brunelis-Noctelle.otf",
   variable: "--font-brunelis",
@@ -34,6 +41,48 @@ const brunelis = localFont({
 const tryFat = localFont({
   src: "./fonts/TRYFat-Black.ttf",
   variable: "--font-tryfat",
+  display: "swap",
+});
+
+const stay = localFont({
+  src: "./fonts/Stay.otf",
+  variable: "--font-stay",
+  display: "swap",
+});
+
+const refind = localFont({
+  src: "./fonts/Refind.otf",
+  variable: "--font-refind",
+  display: "swap",
+});
+
+const aveburg = localFont({
+  src: "./fonts/aveburg-grande-demo.ttf",
+  variable: "--font-aveburg",
+  display: "swap",
+});
+
+const belarin = localFont({
+  src: "./fonts/belarin-regular.ttf",
+  variable: "--font-belarin",
+  display: "swap",
+});
+
+const blokna = localFont({
+  src: "./fonts/blokna-regular-demo.ttf",
+  variable: "--font-blokna",
+  display: "swap",
+});
+
+const fedro = localFont({
+  src: "./fonts/fedro-light-italic.ttf",
+  variable: "--font-fedro",
+  display: "swap",
+});
+
+const regalorn = localFont({
+  src: "./fonts/regalorn-demo-regular.ttf",
+  variable: "--font-regalorn",
   display: "swap",
 });
 
@@ -64,7 +113,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${inter.variable} ${playfair.variable} ${montserrat.variable} ${brunelis.variable} ${tryFat.variable} antialiased`}
+        className={`${inter.variable} ${playfair.variable} ${montserrat.variable} ${poppins.variable} ${brunelis.variable} ${tryFat.variable} ${stay.variable} ${refind.variable} ${aveburg.variable} ${belarin.variable} ${blokna.variable} ${fedro.variable} ${regalorn.variable} antialiased`}
       >
         <CartProvider>{children}</CartProvider>
       </body>
