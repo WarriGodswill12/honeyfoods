@@ -2,12 +2,15 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { Elements } from "@stripe/react-stripe-js";
 import { useCart } from "@/store/cart-store";
 import { formatPrice } from "@/lib/utils";
+import { getStripe } from "@/lib/stripe";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { PaymentForm } from "@/components/customer/payment-form";
 import { DEFAULT_DELIVERY_FEE, FREE_DELIVERY_THRESHOLD } from "@/lib/constants";
 import {
   ShoppingBag,
@@ -24,9 +27,11 @@ import { FadeIn, SlideInUp } from "@/components/shared/animated";
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { items, getTotalPrice } = useCart();
+  const { items, getTotalPrice, clearCart } = useCart();
   const [isProcessing, setIsProcessing] = useState(false);
-  const [applePayAvailable, setApplePayAvailable] = useState(false);
+  const [showPayment, setShowPayment] = useState(false);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [orderId, setOrderId] = useState<string | null>(null);
 
   // Form state
   const [customerInfo, setCustomerInfo] = useState({
@@ -40,11 +45,25 @@ export default function CheckoutPage() {
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [settings, setSettings] = useState<{
+    deliveryFee: number;
+    freeDeliveryThreshold: number;
+  } | null>(null);
 
   const subtotal = getTotalPrice();
   const deliveryFee =
-    subtotal >= FREE_DELIVERY_THRESHOLD ? 0 : DEFAULT_DELIVERY_FEE;
+    settings && subtotal >= settings.freeDeliveryThreshold
+      ? 0
+      : settings?.deliveryFee || DEFAULT_DELIVERY_FEE;
   const total = subtotal + deliveryFee;
+
+  // Fetch settings
+  useEffect(() => {
+    fetch("/api/settings")
+      .then((res) => res.json())
+      .then((data) => setSettings(data))
+      .catch((err) => console.error("Error fetching settings:", err));
+  }, []);
 
   // Check if cart is empty
   useEffect(() => {
@@ -52,17 +71,6 @@ export default function CheckoutPage() {
       router.push("/cart");
     }
   }, [items, router]);
-
-  // Check Apple Pay availability
-  useEffect(() => {
-    if (
-      typeof window !== "undefined" &&
-      (window as any).ApplePaySession &&
-      (window as any).ApplePaySession.canMakePayments()
-    ) {
-      setApplePayAvailable(true);
-    }
-  }, []);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -103,7 +111,7 @@ export default function CheckoutPage() {
     }
   };
 
-  const handleApplePayClick = async () => {
+  const handleProceedToPayment = async () => {
     if (!validateForm()) {
       return;
     }
@@ -111,52 +119,67 @@ export default function CheckoutPage() {
     setIsProcessing(true);
 
     try {
-      // TODO: Implement Apple Pay payment request when backend is ready
-      // For now, simulate payment processing
-      console.log("Apple Pay clicked with order:", {
-        customerInfo,
-        items,
-        total,
+      // 1. Create order
+      const orderResponse = await fetch("/api/orders/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customerInfo,
+          items: items.map((item) => ({
+            productId: item.productId,
+            name: item.name,
+            quantity: item.quantity,
+            price: item.price,
+          })),
+          subtotal,
+          deliveryFee,
+          total,
+        }),
       });
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      if (!orderResponse.ok) {
+        const errorData = await orderResponse.json();
+        console.error("Order creation failed:", errorData);
+        throw new Error(errorData.error || "Failed to create order");
+      }
 
-      // Redirect to success page (will create this next)
-      router.push("/order-confirmation?orderId=DEMO-12345");
-    } catch (error) {
-      console.error("Payment failed:", error);
-      alert("Payment failed. Please try again.");
+      const orderData = await orderResponse.json();
+      setOrderId(orderData.orderId);
+
+      // 2. Create payment intent
+      const paymentResponse = await fetch("/api/payment/create-intent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId: orderData.orderId,
+          customerEmail: customerInfo.email,
+        }),
+      });
+
+      if (!paymentResponse.ok) {
+        throw new Error("Failed to initialize payment");
+      }
+
+      const paymentData = await paymentResponse.json();
+      setClientSecret(paymentData.clientSecret);
+      setShowPayment(true);
+    } catch (error: any) {
+      console.error("Error:", error);
+      alert(error.message || "Failed to process order");
     } finally {
       setIsProcessing(false);
     }
   };
 
-  const handleManualCheckout = async () => {
-    if (!validateForm()) {
-      return;
-    }
+  const handlePaymentSuccess = (successOrderId: string) => {
+    clearCart();
+    router.push(`/order-confirmation?orderId=${successOrderId}`);
+  };
 
-    setIsProcessing(true);
-
-    try {
-      // TODO: Implement manual payment flow when backend is ready
-      console.log("Manual checkout with order:", {
-        customerInfo,
-        items,
-        total,
-      });
-
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      router.push("/order-confirmation?orderId=DEMO-12345");
-    } catch (error) {
-      console.error("Checkout failed:", error);
-      alert("Checkout failed. Please try again.");
-    } finally {
-      setIsProcessing(false);
-    }
+  const handlePaymentError = (error: string) => {
+    alert(`Payment failed: ${error}`);
+    setShowPayment(false);
+    setClientSecret(null);
   };
 
   if (items.length === 0) {
@@ -450,47 +473,57 @@ export default function CheckoutPage() {
                 </div>
 
                 {/* Payment Buttons */}
-                <div className="space-y-3">
-                  {applePayAvailable && (
+                {!showPayment ? (
+                  <div className="space-y-3">
                     <Button
                       size="lg"
-                      onClick={handleApplePayClick}
+                      onClick={handleProceedToPayment}
                       disabled={isProcessing}
-                      className="w-full bg-black hover:bg-gray-800 text-white"
+                      className="w-full active:scale-[0.98]"
                     >
                       {isProcessing ? (
                         <LoadingSpinner className="mr-2" />
                       ) : (
-                        <svg
-                          className="h-5 w-5 mr-2"
-                          viewBox="0 0 24 24"
-                          fill="currentColor"
-                        >
-                          <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
-                        </svg>
+                        <CreditCard className="h-5 w-5 mr-2" />
                       )}
-                      {isProcessing ? "Processing..." : "Pay with Apple Pay"}
+                      {isProcessing ? "Processing..." : "Continue to Payment"}
                     </Button>
-                  )}
 
-                  <Button
-                    size="lg"
-                    onClick={handleManualCheckout}
-                    disabled={isProcessing}
-                    className="w-full active:scale-[0.98]"
-                  >
-                    {isProcessing ? (
-                      <LoadingSpinner className="mr-2" />
-                    ) : (
-                      <CreditCard className="h-5 w-5 mr-2" />
-                    )}
-                    {isProcessing ? "Processing..." : "Continue to Payment"}
-                  </Button>
-                </div>
+                    <p className="text-xs text-gray-500 text-center mt-4">
+                      Supports Apple Pay, Google Pay, and credit cards
+                    </p>
+                  </div>
+                ) : (
+                  clientSecret &&
+                  orderId && (
+                    <div className="mt-6">
+                      <Elements
+                        stripe={getStripe()}
+                        options={{
+                          clientSecret,
+                          appearance: {
+                            theme: "stripe",
+                            variables: {
+                              colorPrimary: "#e0a81f",
+                            },
+                          },
+                        }}
+                      >
+                        <PaymentForm
+                          orderId={orderId}
+                          onSuccess={handlePaymentSuccess}
+                          onError={handlePaymentError}
+                        />
+                      </Elements>
+                    </div>
+                  )
+                )}
 
-                <p className="text-xs text-gray-500 text-center mt-4">
-                  Your payment information is secure and encrypted
-                </p>
+                {!showPayment && (
+                  <p className="text-xs text-gray-500 text-center mt-4">
+                    Your payment information is secure and encrypted
+                  </p>
+                )}
               </div>
             </SlideInUp>
           </div>

@@ -3,15 +3,26 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
   Package,
   ShoppingBag,
   DollarSign,
-  TrendingUp,
   Clock,
   CheckCircle,
+  Eye,
 } from "lucide-react";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice, formatDate } from "@/lib/utils";
+
+interface Order {
+  id: string;
+  orderNumber: string;
+  customerName: string;
+  total: number;
+  status: string;
+  createdAt: string;
+  orderItems: any[];
+}
 
 export default function DashboardPage() {
   const [stats, setStats] = useState({
@@ -20,26 +31,40 @@ export default function DashboardPage() {
     totalRevenue: 0,
     pendingOrders: 0,
   });
+  const [recentOrders, setRecentOrders] = useState<Order[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Fetch real stats from API
   useEffect(() => {
-    const fetchStats = async () => {
+    const fetchData = async () => {
       try {
-        const response = await fetch("/api/products");
-        if (response.ok) {
-          const products = await response.json();
+        // Fetch products
+        const productsResponse = await fetch("/api/products");
+        const products = productsResponse.ok
+          ? await productsResponse.json()
+          : [];
+
+        // Fetch orders
+        const ordersResponse = await fetch("/api/orders?limit=5");
+        if (ordersResponse.ok) {
+          const ordersData = await ordersResponse.json();
           setStats({
             totalProducts: products.length,
-            totalOrders: 0, // Will be implemented in Phase 5
-            totalRevenue: 0, // Will be implemented in Phase 5
-            pendingOrders: 0, // Will be implemented in Phase 5
+            totalOrders: ordersData.stats?.totalOrders || 0,
+            totalRevenue: ordersData.stats?.totalRevenue || 0,
+            pendingOrders: ordersData.stats?.pendingOrders || 0,
           });
+          setRecentOrders(ordersData.orders || []);
+        } else {
+          setStats((prev) => ({ ...prev, totalProducts: products.length }));
         }
       } catch (error) {
         console.error("Error fetching stats:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
-    fetchStats();
+    fetchData();
   }, []);
 
   const statCards = [
@@ -117,41 +142,98 @@ export default function DashboardPage() {
             </h2>
             <Link
               href="/admin/orders"
-              className="text-sm text-honey-gold hover:text-honey-gold/80"
+              className="text-sm text-honey-gold hover:text-honey-gold/80 font-medium"
             >
-              View All
+              View All →
             </Link>
           </div>
 
-          <div className="space-y-4">
-            {[1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className="flex items-center justify-between p-4 bg-gray-50 rounded-xl"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-honey-gold/20 flex items-center justify-center">
-                    <ShoppingBag className="h-5 w-5 text-honey-gold" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-charcoal-black">
-                      Order #000{i}
-                    </p>
-                    <p className="text-sm text-gray-500">2 items</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="font-medium text-charcoal-black">
-                    {formatPrice(5000 * i)}
-                  </p>
-                  <span className="inline-flex items-center gap-1 text-xs text-orange-600 bg-orange-50 px-2 py-1 rounded-full">
-                    <Clock className="h-3 w-3" />
-                    Pending
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-honey-gold"></div>
+            </div>
+          ) : recentOrders.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <ShoppingBag className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+              <p>No orders yet</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {recentOrders.map((order) => {
+                const statusConfig = {
+                  PENDING: {
+                    label: "Pending",
+                    color: "text-orange-600 bg-orange-50",
+                    icon: Clock,
+                  },
+                  CONFIRMED: {
+                    label: "Confirmed",
+                    color: "text-blue-600 bg-blue-50",
+                    icon: CheckCircle,
+                  },
+                  PREPARING: {
+                    label: "Preparing",
+                    color: "text-purple-600 bg-purple-50",
+                    icon: Package,
+                  },
+                  OUT_FOR_DELIVERY: {
+                    label: "Out for Delivery",
+                    color: "text-indigo-600 bg-indigo-50",
+                    icon: ShoppingBag,
+                  },
+                  DELIVERED: {
+                    label: "Delivered",
+                    color: "text-green-600 bg-green-50",
+                    icon: CheckCircle,
+                  },
+                  CANCELLED: {
+                    label: "Cancelled",
+                    color: "text-red-600 bg-red-50",
+                    icon: Clock,
+                  },
+                };
+
+                const status =
+                  statusConfig[order.status as keyof typeof statusConfig] ||
+                  statusConfig.PENDING;
+                const StatusIcon = status.icon;
+
+                return (
+                  <Link
+                    key={order.id}
+                    href="/admin/orders"
+                    className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-full bg-honey-gold/20 flex items-center justify-center">
+                        <ShoppingBag className="h-5 w-5 text-honey-gold" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-charcoal-black">
+                          {order.orderNumber}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          {order.customerName} • {order.orderItems.length}{" "}
+                          {order.orderItems.length === 1 ? "item" : "items"}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-medium text-charcoal-black mb-1">
+                        {formatPrice(order.total)}
+                      </p>
+                      <span
+                        className={`inline-flex items-center gap-1 text-xs ${status.color} px-2 py-1 rounded-full`}
+                      >
+                        <StatusIcon className="h-3 w-3" />
+                        {status.label}
+                      </span>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
         </Card>
 
         {/* Quick Actions */}
@@ -164,21 +246,28 @@ export default function DashboardPage() {
             <Link href="/admin/products">
               <button className="w-full flex items-center gap-3 p-4 bg-honey-gold text-white rounded-xl hover:opacity-90 transition-opacity">
                 <Package className="h-5 w-5" />
-                <span className="font-medium">Add New Product</span>
+                <span className="font-medium">Manage Products</span>
               </button>
             </Link>
 
             <Link href="/admin/orders">
               <button className="w-full flex items-center gap-3 p-4 bg-warm-orange text-white rounded-xl hover:opacity-90 transition-opacity">
-                <CheckCircle className="h-5 w-5" />
-                <span className="font-medium">View Pending Orders</span>
+                <Eye className="h-5 w-5" />
+                <span className="font-medium">View All Orders</span>
               </button>
             </Link>
 
-            <Link href="/admin/dashboard">
+            <Link href="/admin/settings">
               <button className="w-full flex items-center gap-3 p-4 bg-gray-100 text-charcoal-black rounded-xl hover:bg-gray-200 transition-colors">
-                <TrendingUp className="h-5 w-5" />
-                <span className="font-medium">View Analytics</span>
+                <DollarSign className="h-5 w-5" />
+                <span className="font-medium">Update Settings</span>
+              </button>
+            </Link>
+
+            <Link href="/admin/gallery">
+              <button className="w-full flex items-center gap-3 p-4 bg-gray-100 text-charcoal-black rounded-xl hover:bg-gray-200 transition-colors">
+                <Package className="h-5 w-5" />
+                <span className="font-medium">Manage Images</span>
               </button>
             </Link>
           </div>

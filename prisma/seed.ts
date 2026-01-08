@@ -8,13 +8,15 @@ async function main() {
   console.log("Starting seed...");
 
   // Create admin user
-  const hashedPassword = await bcrypt.hash("admin123", 10);
+  const adminEmail = process.env.ADMIN_EMAIL || "admin@honeyfoods.com";
+  const adminPassword = process.env.ADMIN_PASSWORD || "admin123";
+  const hashedPassword = await bcrypt.hash(adminPassword, 10);
 
   const admin = await prisma.user.upsert({
-    where: { email: "admin@honeyfoods.com" },
+    where: { email: adminEmail },
     update: {},
     create: {
-      email: "admin@honeyfoods.com",
+      email: adminEmail,
       name: "Admin User",
       passwordHash: hashedPassword,
       role: "ADMIN",
@@ -23,7 +25,8 @@ async function main() {
 
   console.log("✓ Created admin user:", admin.email);
 
-  // Clear existing products
+  // Clear existing data (in correct order to avoid foreign key constraints)
+  await prisma.orderItem.deleteMany({});
   await prisma.product.deleteMany({});
   console.log("✓ Cleared existing products");
 
@@ -301,8 +304,8 @@ async function main() {
   console.log("✓ Created sample products");
   console.log("\n=== Seed Complete ===");
   console.log("Admin Login:");
-  console.log("Email: admin@honeyfoods.com");
-  console.log("Password: admin123");
+  console.log("Email:", process.env.ADMIN_EMAIL || "admin@honeyfoods.com");
+  console.log("Password:", process.env.ADMIN_PASSWORD || "admin123");
 }
 
 main()

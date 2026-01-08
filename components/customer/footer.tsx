@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Phone, Mail, MapPin, MessageCircle } from "lucide-react";
+import { Phone, Mail, MapPin } from "lucide-react";
 import { siteConfig } from "@/config/site";
 
 export function Footer() {
@@ -93,20 +93,6 @@ export function Footer() {
                 <span className="text-gray-300">
                   {siteConfig.contact.address}
                 </span>
-              </li>
-              <li>
-                <a
-                  href={`https://wa.me/${siteConfig.contact.whatsapp.replace(
-                    /\+/g,
-                    ""
-                  )}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center space-x-2 rounded-lg bg-green-600 px-4 py-2 text-white hover:bg-green-700 transition-colors"
-                >
-                  <MessageCircle className="h-4 w-4" />
-                  <span>WhatsApp</span>
-                </a>
               </li>
             </ul>
           </div>

@@ -343,6 +343,21 @@ function HowItWorks() {
 // About Section with Image
 // Welcome to Honey Foods Section
 function AboutSection() {
+  const [aboutImage, setAboutImage] = useState(
+    "https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=1200&q=80"
+  );
+
+  useEffect(() => {
+    fetch("/api/settings")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.aboutUsImage) {
+          setAboutImage(data.aboutUsImage);
+        }
+      })
+      .catch((err) => console.error("Error fetching settings:", err));
+  }, []);
+
   return (
     <section className="py-16 sm:py-20 lg:py-24 bg-white">
       <div className="container mx-auto px-4 sm:px-6 lg:px-12">
@@ -350,7 +365,7 @@ function AboutSection() {
           <FadeIn className="lg:w-1/2 w-full">
             <div className="relative aspect-4/3 rounded-3xl overflow-hidden shadow-2xl">
               <img
-                src="https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=1200&q=80"
+                src={aboutImage}
                 alt="About Honey Foods"
                 className="w-full h-full object-cover"
               />

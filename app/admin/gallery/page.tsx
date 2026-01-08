@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Card } from "@/components/ui/card";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -27,6 +28,7 @@ import {
   Save,
   X,
   LayoutDashboard,
+  AlertCircle,
 } from "lucide-react";
 
 interface GalleryImage {
@@ -47,10 +49,72 @@ export default function GalleryManagement() {
     alt: "",
     order: 0,
   });
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+
+  // Settings images
+  const [heroBackgroundImage, setHeroBackgroundImage] = useState("");
+  const [aboutUsImage, setAboutUsImage] = useState("");
+  const [isLoadingSettings, setIsLoadingSettings] = useState(true);
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
+  const [settingsMessage, setSettingsMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
 
   useEffect(() => {
     loadImages();
+    loadSettings();
   }, []);
+
+  const loadSettings = async () => {
+    try {
+      const response = await fetch("/api/settings");
+      if (!response.ok) throw new Error("Failed to fetch settings");
+
+      const data = await response.json();
+      setHeroBackgroundImage(data.heroBackgroundImage || "");
+      setAboutUsImage(data.aboutUsImage || "");
+    } catch (error) {
+      console.error("Error fetching settings:", error);
+    } finally {
+      setIsLoadingSettings(false);
+    }
+  };
+
+  const handleSaveSettings = async () => {
+    setIsSavingSettings(true);
+    setSettingsMessage(null);
+
+    try {
+      const response = await fetch("/api/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          heroBackgroundImage,
+          aboutUsImage,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to save settings");
+      }
+
+      setSettingsMessage({
+        type: "success",
+        text: "Images saved successfully!",
+      });
+      setTimeout(() => setSettingsMessage(null), 3000);
+    } catch (error: any) {
+      console.error("Error saving settings:", error);
+      setSettingsMessage({
+        type: "error",
+        text: error.message || "Failed to save images",
+      });
+    } finally {
+      setIsSavingSettings(false);
+    }
+  };
 
   const loadImages = () => {
     // Load from localStorage for now
@@ -195,7 +259,7 @@ export default function GalleryManagement() {
             Gallery Management
           </h1>
           <p className="text-gray-600 mt-2">
-            Manage hero slider and gallery slideshow images
+            Manage page images, hero slider and gallery slideshow
           </p>
         </div>
         <Button onClick={openAddModal} size="lg" className="font-semibold">
@@ -203,6 +267,188 @@ export default function GalleryManagement() {
           Add Image
         </Button>
       </div>
+
+      {/* Settings Images Section */}
+      <Card className="p-6 mb-8">
+        <div className="mb-6">
+          <h2 className="font-heading text-2xl font-bold text-charcoal-black mb-2">
+            Page Images
+          </h2>
+          <p className="text-gray-600">
+            Manage hero background and about us page images
+          </p>
+        </div>
+
+        {settingsMessage && (
+          <div
+            className={`mb-6 p-4 rounded-lg flex items-center gap-3 ${
+              settingsMessage.type === "success"
+                ? "bg-green-50 text-green-800 border border-green-200"
+                : "bg-red-50 text-red-800 border border-red-200"
+            }`}
+          >
+            <AlertCircle className="h-5 w-5" />
+            <span>{settingsMessage.text}</span>
+          </div>
+        )}
+
+        {isLoadingSettings ? (
+          <div className="text-center py-8 text-gray-500">
+            Loading images...
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {/* Hero Background Image */}
+            <div className="border-b pb-6">
+              <Label className="text-lg font-semibold mb-3 block">
+                Hero Background Image
+              </Label>
+              <p className="text-sm text-gray-500 mb-4">
+                This image appears as the background on the homepage hero
+                section
+              </p>
+              <Input
+                type="file"
+                accept="image/*"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+
+                  const formData = new FormData();
+                  formData.append("file", file);
+                  formData.append("folder", "honeyfoods/hero");
+
+                  try {
+                    setIsSavingSettings(true);
+                    const response = await fetch("/api/upload", {
+                      method: "POST",
+                      body: formData,
+                    });
+
+                    if (!response.ok) {
+                      const error = await response.json();
+                      throw new Error(error.error);
+                    }
+
+                    const data = await response.json();
+                    setHeroBackgroundImage(data.url);
+                    setSettingsMessage({
+                      type: "success",
+                      text: "Image uploaded! Click Save to apply.",
+                    });
+                    setTimeout(() => setSettingsMessage(null), 3000);
+                  } catch (error: any) {
+                    setSettingsMessage({
+                      type: "error",
+                      text: error.message || "Upload failed",
+                    });
+                  } finally {
+                    setIsSavingSettings(false);
+                  }
+                }}
+                className="mb-3"
+              />
+              {heroBackgroundImage && (
+                <div className="relative aspect-video rounded-lg overflow-hidden border-2 border-gray-200">
+                  <img
+                    src={heroBackgroundImage}
+                    alt="Hero Background Preview"
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src =
+                        "https://via.placeholder.com/800x450?text=Invalid+Image+URL";
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* About Us Image */}
+            <div className="pb-6">
+              <Label className="text-lg font-semibold mb-3 block">
+                About Us Section Image
+              </Label>
+              <p className="text-sm text-gray-500 mb-4">
+                This image appears in the "Welcome to Honey Foods" section on
+                the homepage and about page
+              </p>
+              <Input
+                type="file"
+                accept="image/*"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+
+                  const formData = new FormData();
+                  formData.append("file", file);
+                  formData.append("folder", "honeyfoods/about");
+
+                  try {
+                    setIsSavingSettings(true);
+                    const response = await fetch("/api/upload", {
+                      method: "POST",
+                      body: formData,
+                    });
+
+                    if (!response.ok) {
+                      const error = await response.json();
+                      throw new Error(error.error);
+                    }
+
+                    const data = await response.json();
+                    setAboutUsImage(data.url);
+                    setSettingsMessage({
+                      type: "success",
+                      text: "Image uploaded! Click Save to apply.",
+                    });
+                    setTimeout(() => setSettingsMessage(null), 3000);
+                  } catch (error: any) {
+                    setSettingsMessage({
+                      type: "error",
+                      text: error.message || "Upload failed",
+                    });
+                  } finally {
+                    setIsSavingSettings(false);
+                  }
+                }}
+                className="mb-3"
+              />
+              {aboutUsImage && (
+                <div className="relative aspect-video rounded-lg overflow-hidden border-2 border-gray-200">
+                  <img
+                    src={aboutUsImage}
+                    alt="About Us Preview"
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src =
+                        "https://via.placeholder.com/800x450?text=Invalid+Image+URL";
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+
+            <Button
+              onClick={handleSaveSettings}
+              disabled={isSavingSettings}
+              size="lg"
+              className="w-full sm:w-auto"
+            >
+              {isSavingSettings ? (
+                <>
+                  <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="mr-2 h-5 w-5" />
+                  Save Page Images
+                </>
+              )}
+            </Button>
+          </div>
+        )}
+      </Card>
 
       {/* Hero Slider Images */}
       <section className="mb-12">
@@ -337,19 +583,52 @@ export default function GalleryManagement() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="url">Image URL</Label>
+                <Label htmlFor="file">Upload Image</Label>
                 <Input
-                  id="url"
-                  type="url"
-                  placeholder="https://images.unsplash.com/photo-..."
-                  value={formData.url}
-                  onChange={(e) =>
-                    setFormData({ ...formData, url: e.target.value })
-                  }
-                  required
+                  id="file"
+                  type="file"
+                  accept="image/*"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+
+                    const formDataUpload = new FormData();
+                    formDataUpload.append("file", file);
+                    formDataUpload.append(
+                      "folder",
+                      `honeyfoods/${formData.type}`
+                    );
+
+                    try {
+                      setIsUploadingImage(true);
+                      const response = await fetch("/api/upload", {
+                        method: "POST",
+                        body: formDataUpload,
+                      });
+
+                      if (!response.ok) {
+                        const error = await response.json();
+                        throw new Error(error.error);
+                      }
+
+                      const data = await response.json();
+                      setFormData({ ...formData, url: data.url });
+                    } catch (error: any) {
+                      alert(
+                        error.message || "Upload failed. Please try again."
+                      );
+                    } finally {
+                      setIsUploadingImage(false);
+                    }
+                  }}
+                  disabled={isUploadingImage}
+                  required={!formData.url}
                 />
+                {isUploadingImage && (
+                  <p className="text-xs text-blue-600">Uploading image...</p>
+                )}
                 <p className="text-xs text-gray-500">
-                  Use Unsplash or Cloudinary URLs for best performance
+                  Upload JPEG, PNG, or WebP images (max 10MB)
                 </p>
               </div>
 
@@ -410,6 +689,7 @@ export default function GalleryManagement() {
                   type="submit"
                   size="lg"
                   className="flex-1 font-semibold"
+                  disabled={isUploadingImage || !formData.url}
                 >
                   <Save className="mr-2 h-5 w-5" />
                   {editingImage ? "Update Image" : "Add Image"}
@@ -419,6 +699,7 @@ export default function GalleryManagement() {
                   variant="outline"
                   size="lg"
                   onClick={() => setIsModalOpen(false)}
+                  disabled={isUploadingImage}
                 >
                   Cancel
                 </Button>

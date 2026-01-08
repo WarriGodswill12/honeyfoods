@@ -1,8 +1,11 @@
-import { brand } from "@/config/brand";
-import { Mail, Phone, MapPin, MessageCircle, Home } from "lucide-react";
+"use client";
+
+import { siteConfig } from "@/config/site";
+import { Mail, Phone, MapPin, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { useState, FormEvent } from "react";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -18,6 +21,33 @@ import {
 } from "@/components/shared/animated";
 
 export default function ContactPage() {
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    message: "",
+  });
+
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    const subject = `Contact Form: Message from ${formData.name}`;
+    const body = `Name: ${formData.name}%0D%0AEmail: ${formData.email}%0D%0APhone: ${formData.phone}%0D%0A%0D%0AMessage:%0D%0A${formData.message}`;
+
+    window.location.href = `mailto:${
+      siteConfig.contact.email
+    }?subject=${encodeURIComponent(subject)}&body=${body}`;
+  };
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    setFormData({
+      ...formData,
+      [e.target.id]: e.target.value,
+    });
+  };
+
   return (
     <div className="container mx-auto px-4 py-8 sm:py-10 lg:py-12 sm:px-6 lg:px-8">
       {/* Breadcrumb */}
@@ -55,7 +85,7 @@ export default function ContactPage() {
               Send us a Message
             </h2>
 
-            <form className="space-y-5 sm:space-y-6">
+            <form className="space-y-5 sm:space-y-6" onSubmit={handleSubmit}>
               <div>
                 <label
                   htmlFor="name"
@@ -63,7 +93,14 @@ export default function ContactPage() {
                 >
                   Your Name
                 </label>
-                <Input id="name" type="text" placeholder="John Doe" required />
+                <Input
+                  id="name"
+                  type="text"
+                  placeholder="John Doe"
+                  required
+                  value={formData.name}
+                  onChange={handleChange}
+                />
               </div>
 
               <div>
@@ -78,6 +115,8 @@ export default function ContactPage() {
                   type="email"
                   placeholder="john@example.com"
                   required
+                  value={formData.email}
+                  onChange={handleChange}
                 />
               </div>
 
@@ -88,7 +127,13 @@ export default function ContactPage() {
                 >
                   Phone Number
                 </label>
-                <Input id="phone" type="tel" placeholder="+234 XXX XXX XXXX" />
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="+234 XXX XXX XXXX"
+                  value={formData.phone}
+                  onChange={handleChange}
+                />
               </div>
 
               <div>
@@ -103,6 +148,8 @@ export default function ContactPage() {
                   placeholder="Tell us how we can help you..."
                   rows={5}
                   required
+                  value={formData.message}
+                  onChange={handleChange}
                 />
               </div>
 
@@ -138,7 +185,9 @@ export default function ContactPage() {
                 </div>
                 <div>
                   <h3 className="font-semibold text-charcoal-black">Phone</h3>
-                  <p className="mt-1 text-gray-600">{brand.contact.phone}</p>
+                  <p className="mt-1 text-gray-600">
+                    {siteConfig.contact.phone}
+                  </p>
                   <p className="text-sm text-gray-500">Mon-Sat, 8am-8pm</p>
                 </div>
               </div>
@@ -150,34 +199,12 @@ export default function ContactPage() {
                 </div>
                 <div>
                   <h3 className="font-semibold text-charcoal-black">Email</h3>
-                  <p className="mt-1 text-gray-600">{brand.contact.email}</p>
+                  <p className="mt-1 text-gray-600">
+                    {siteConfig.contact.email}
+                  </p>
                   <p className="text-sm text-gray-500">
                     We reply within 24 hours
                   </p>
-                </div>
-              </div>
-
-              {/* WhatsApp */}
-              <div className="flex items-start space-x-4">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-honey-gold/10">
-                  <MessageCircle className="h-6 w-6 text-honey-gold" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-charcoal-black">
-                    WhatsApp
-                  </h3>
-                  <p className="mt-1 text-gray-600">{brand.contact.whatsapp}</p>
-                  <a
-                    href={`https://wa.me/${brand.contact.whatsapp.replace(
-                      /\s+/g,
-                      ""
-                    )}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-2 inline-block text-sm font-medium text-honey-gold hover:text-warm-orange"
-                  >
-                    Chat with us →
-                  </a>
                 </div>
               </div>
 
@@ -190,33 +217,12 @@ export default function ContactPage() {
                   <h3 className="font-semibold text-charcoal-black">
                     Location
                   </h3>
-                  <p className="mt-1 text-gray-600">{brand.contact.address}</p>
+                  <p className="mt-1 text-gray-600">
+                    {siteConfig.contact.address}
+                  </p>
                 </div>
               </div>
             </div>
-          </div>
-
-          {/* Quick Order CTA */}
-          <div className="bg-honey-gold p-10 text-white rounded-3xl">
-            <h3 className="font-heading mb-4 text-3xl font-bold">
-              Ready to Order?
-            </h3>
-            <p className="mb-8 text-white/95 leading-relaxed">
-              Skip the wait and place your order directly through WhatsApp for
-              faster service!
-            </p>
-            <a
-              href={`https://wa.me/${brand.contact.whatsapp.replace(
-                /\s+/g,
-                ""
-              )}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center rounded-full bg-white px-8 py-3.5 font-semibold text-charcoal-black transition-all hover:opacity-90 active:scale-[0.98]"
-            >
-              <MessageCircle className="mr-2 h-5 w-5" />
-              Order via WhatsApp
-            </a>
           </div>
         </SlideInRight>
       </div>

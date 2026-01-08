@@ -132,3 +132,21 @@ model Payment {
   @@index([orderId])
   @@index([providerPaymentId])
 }
+
+// Store Settings model
+model Settings {
+  id                      String   @id @default(cuid())
+  deliveryFee             Float    @default(1500)
+  freeDeliveryThreshold   Float    @default(10000)
+  minOrderAmount          Float    @default(500)
+  storeName               String   @default("HoneyFoods")
+  storeTagline            String   @default("Taste is everything")
+  storeEmail              String   @default("info@honeyfoods.com")
+  storePhone              String   @default("+234 123 456 7890")
+  storeAddress            String   @default("123 Main Street, Lagos, Nigeria")
+  storeCity               String   @default("Lagos")
+  storePostalCode         String   @default("100001")
+  heroBackgroundImage     String   @default("https://images.unsplash.com/photo-1512058564366-18510be2db19?w=1920&q=80")
+  aboutUsImage            String   @default("https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=1200&q=80")
+  updatedAt               DateTime @updatedAt
+}

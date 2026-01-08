@@ -73,7 +73,7 @@ export default function AdminLoginPage() {
             <Input
               type="email"
               label="Email"
-              placeholder="admin@honeyfoods.com"
+              placeholder="Enter your email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -99,12 +99,6 @@ export default function AdminLoginPage() {
               {isLoading ? "Signing in..." : "Sign In"}
             </Button>
           </form>
-
-          <div className="mt-8 pt-6 border-t border-gray-100">
-            <p className="text-sm text-gray-500 text-center">
-              Default credentials: admin@honeyfoods.com / admin123
-            </p>
-          </div>
         </div>
       </div>
     </div>

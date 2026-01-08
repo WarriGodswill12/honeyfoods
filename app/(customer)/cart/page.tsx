@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useCart } from "@/store/cart-store";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,11 +19,25 @@ import { DEFAULT_DELIVERY_FEE, FREE_DELIVERY_THRESHOLD } from "@/lib/constants";
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, getTotalPrice } = useCart();
+  const [settings, setSettings] = useState<{
+    deliveryFee: number;
+    freeDeliveryThreshold: number;
+  } | null>(null);
 
   const subtotal = getTotalPrice();
   const deliveryFee =
-    subtotal >= FREE_DELIVERY_THRESHOLD ? 0 : DEFAULT_DELIVERY_FEE;
+    settings && subtotal >= settings.freeDeliveryThreshold
+      ? 0
+      : settings?.deliveryFee || DEFAULT_DELIVERY_FEE;
   const total = subtotal + deliveryFee;
+
+  // Fetch settings
+  useEffect(() => {
+    fetch("/api/settings")
+      .then((res) => res.json())
+      .then((data) => setSettings(data))
+      .catch((err) => console.error("Error fetching settings:", err));
+  }, []);
 
   if (items.length === 0) {
     return (
