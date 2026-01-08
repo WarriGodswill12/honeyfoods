@@ -3,13 +3,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { StripeProvider } from "@/services/payment/stripe-provider";
 import { prisma } from "@/lib/prisma";
 
-// Disable body parsing for webhook signature verification
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
-
 export async function POST(request: NextRequest) {
   try {
     const body = await request.text();
