@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AlertCircle } from "lucide-react";
+import Image from "next/image";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -48,6 +49,16 @@ export default function AdminLoginPage() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-10">
+          <div className="flex justify-center mb-4">
+            <Image
+              src="/logo.png"
+              alt="HoneyFoods Logo"
+              width={240}
+              height={240}
+              className="h-28 w-auto sm:h-32"
+              priority
+            />
+          </div>
           <h1 className="font-heading text-4xl font-bold text-charcoal-black">
             Honey<span className="text-honey-gold">Foods</span>
           </h1>

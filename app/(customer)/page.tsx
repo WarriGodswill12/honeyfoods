@@ -216,7 +216,7 @@ function FeaturedProducts() {
               <div className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer">
                 <div className="relative aspect-square bg-gray-100">
                   <Image
-                    src={product.image}
+                    src={product.image || "/images/placeholder-product.svg"}
                     alt={product.name}
                     fill
                     className="object-cover group-hover:scale-105 transition-transform duration-500"
@@ -264,12 +264,12 @@ function FeaturedProducts() {
         </StaggerChildren>
 
         <div className="text-center mt-8 sm:mt-10 lg:mt-12">
-          <Link href="/shop">
+          <Link href="/gallery">
             <Button
               size="lg"
               className="shadow-lg active:scale-95 text-sm sm:text-base"
             >
-              View Full Menu
+              View Gallery Photos
               <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
             </Button>
           </Link>
@@ -498,12 +498,12 @@ function GallerySection() {
         </div>
 
         <div className="text-center mt-12">
-          <Link href="/shop">
+          <Link href="/gallery">
             <Button
               size="lg"
               className="shadow-lg hover:scale-105 transition-transform text-base font-semibold"
             >
-              View All Products
+              View Gallery Photos
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
           </Link>

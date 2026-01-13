@@ -23,6 +23,7 @@ export class StripeProvider implements PaymentProvider {
     const paymentIntent = await stripe.paymentIntents.create({
       amount: params.amount,
       currency: params.currency,
+      // Let Stripe surface all eligible methods (Apple Pay, Google Pay, etc.)
       automatic_payment_methods: {
         enabled: true,
       },
@@ -66,7 +67,18 @@ export class StripeProvider implements PaymentProvider {
       );
     }
 
-    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
+    // Prefer explicit secret, otherwise pick based on environment
+    const webhookSecret =
+      process.env.STRIPE_WEBHOOK_SECRET ||
+      (process.env.NODE_ENV === "production"
+        ? process.env.STRIPE_WEBHOOK_SECRET_LIVE
+        : process.env.STRIPE_WEBHOOK_SECRET_TEST);
+
+    if (!webhookSecret) {
+      throw new Error(
+        "Missing STRIPE_WEBHOOK_SECRET. Configure STRIPE_WEBHOOK_SECRET or STRIPE_WEBHOOK_SECRET_LIVE/TEST."
+      );
+    }
 
     const event = stripe.webhooks.constructEvent(
       payload,

@@ -35,6 +35,7 @@ import {
   AlertCircle,
   Trash,
   LayoutDashboard,
+  CheckCircle2,
 } from "lucide-react";
 import Image from "next/image";
 import type { Product } from "@/types/product";
@@ -50,6 +51,10 @@ export default function ProductsPage() {
   const [error, setError] = useState("");
   const [isClearDialogOpen, setIsClearDialogOpen] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -62,6 +67,18 @@ export default function ProductsPage() {
     available: true,
     sizes: "" as string,
   });
+
+  // Check if form is valid for submission
+  const isFormValid = () => {
+    const hasRequiredFields =
+      formData.name.trim() !== "" &&
+      formData.description.trim() !== "" &&
+      formData.price !== "" &&
+      formData.category.trim() !== "" &&
+      formData.image.trim() !== "";
+
+    return hasRequiredFields && !isUploadingImage;
+  };
 
   // Fetch products
   const fetchProducts = async () => {
@@ -159,16 +176,17 @@ export default function ProductsPage() {
   };
 
   const handleDelete = async (product: Product) => {
-    if (
-      !confirm(
-        `Are you sure you want to delete "${product.name}"? This action cannot be undone.`
-      )
-    ) {
-      return;
-    }
+    setProductToDelete(product);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!productToDelete) return;
+
+    setIsDeleting(true);
 
     try {
-      const response = await fetch(`/api/products/${product.id}`, {
+      const response = await fetch(`/api/products/${productToDelete.id}`, {
         method: "DELETE",
       });
 
@@ -177,9 +195,13 @@ export default function ProductsPage() {
         throw new Error(data.error || "Failed to delete product");
       }
 
+      setDeleteDialogOpen(false);
+      setProductToDelete(null);
       fetchProducts();
     } catch (error: any) {
       alert(error.message);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -327,13 +349,13 @@ export default function ProductsPage() {
               {/* Product Image */}
               <div className="relative h-48 bg-gray-100">
                 <Image
-                  src={product.image}
+                  src={product.image || "/images/placeholder-product.svg"}
                   alt={product.name}
                   fill
                   className="object-cover"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
-                    target.src = "/images/placeholder-product.jpg";
+                    target.src = "/images/placeholder-product.svg";
                   }}
                 />
                 <div className="absolute top-3 right-3 flex gap-2">
@@ -423,7 +445,7 @@ export default function ProductsPage() {
 
           <div className="grid grid-cols-2 gap-4">
             <Input
-              label="Price (₦)"
+              label="Price (€)"
               type="number"
               placeholder="5000"
               value={formData.price}
@@ -464,15 +486,78 @@ export default function ProductsPage() {
             </p>
           </div>
 
-          <Input
-            label="Image URL"
-            placeholder="https://example.com/image.jpg"
-            value={formData.image}
-            onChange={(e) =>
-              setFormData({ ...formData, image: e.target.value })
-            }
-            disabled={isSubmitting}
-          />
+          <div>
+            <label className="mb-2 block text-sm font-medium text-charcoal-black">
+              Product Image <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+
+                const fd = new FormData();
+                fd.append("file", file);
+                fd.append("folder", "honeyfoods/products");
+
+                setIsUploadingImage(true);
+
+                try {
+                  const res = await fetch("/api/upload", {
+                    method: "POST",
+                    body: fd,
+                  });
+                  if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.error || "Upload failed");
+                  }
+                  const data = await res.json();
+                  setFormData({ ...formData, image: data.url });
+                } catch (err) {
+                  console.error("Upload error:", err);
+                  alert("Image upload failed. Please try again.");
+                } finally {
+                  setIsUploadingImage(false);
+                }
+              }}
+              disabled={isSubmitting || isUploadingImage}
+              className="block w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-honey-gold file:text-white hover:file:bg-warm-orange disabled:opacity-50 disabled:cursor-not-allowed"
+            />
+
+            {/* Upload Loading State */}
+            {isUploadingImage && (
+              <div className="mt-3 flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-honey-gold"></div>
+                <span className="text-sm text-blue-700 font-medium">
+                  Uploading image...
+                </span>
+              </div>
+            )}
+
+            {/* Image Preview */}
+            {formData.image && !isUploadingImage && (
+              <div className="mt-3 flex items-center gap-3">
+                <img
+                  src={formData.image}
+                  alt="Preview"
+                  className="h-24 w-24 object-cover rounded-md border"
+                />
+                <div className="flex items-center gap-2 text-green-600">
+                  <CheckCircle2 className="h-5 w-5" />
+                  <span className="text-sm font-medium">
+                    Image uploaded successfully
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {!formData.image && !isUploadingImage && (
+              <p className="mt-2 text-xs text-gray-500">
+                Required. Please upload a product image before submitting.
+              </p>
+            )}
+          </div>
 
           <div className="flex gap-6">
             <label className="flex items-center gap-3">
@@ -507,16 +592,26 @@ export default function ProductsPage() {
               type="button"
               variant="outline"
               onClick={() => setIsModalOpen(false)}
-              disabled={isSubmitting}
+              disabled={isSubmitting || isUploadingImage}
               className="flex-1"
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting} className="flex-1">
+            <Button
+              type="submit"
+              disabled={
+                isSubmitting ||
+                isUploadingImage ||
+                (editingProduct ? false : !isFormValid())
+              }
+              className="flex-1"
+            >
               {isSubmitting
                 ? editingProduct
                   ? "Updating..."
                   : "Adding..."
+                : isUploadingImage
+                ? "Uploading image..."
                 : editingProduct
                 ? "Update Product"
                 : "Add Product"}
@@ -524,6 +619,66 @@ export default function ProductsPage() {
           </div>
         </form>
       </Modal>
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <AlertCircle className="h-5 w-5" />
+              Delete Product
+            </DialogTitle>
+            <DialogDescription className="space-y-3 pt-4">
+              <p className="font-medium text-charcoal-black">
+                Are you sure you want to delete "{productToDelete?.name}"?
+              </p>
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 space-y-2">
+                <p className="text-sm text-red-800 font-semibold flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4" />
+                  Warning: This action cannot be undone!
+                </p>
+                <ul className="text-sm text-red-700 list-disc list-inside space-y-1">
+                  <li>The product will be permanently deleted</li>
+                  <li>This action is irreversible</li>
+                  <li>Product data cannot be recovered</li>
+                </ul>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex gap-3 sm:gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setDeleteDialogOpen(false);
+                setProductToDelete(null);
+              }}
+              disabled={isDeleting}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={confirmDelete}
+              disabled={isDeleting}
+              className="flex-1 bg-red-600 hover:bg-red-700"
+            >
+              {isDeleting ? (
+                <>
+                  <LoadingSpinner />
+                  <span className="ml-2">Deleting...</span>
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Permanently
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

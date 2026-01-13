@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { slugify } from "@/lib/utils";
+import { sanitizeString } from "@/lib/sanitize";
 
 // GET /api/products - Get all products
 export async function GET(request: NextRequest) {
@@ -64,8 +65,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Sanitize inputs to prevent XSS
+    const sanitizedName = sanitizeString(name);
+    const sanitizedDescription = sanitizeString(description);
+    const sanitizedCategory = sanitizeString(category);
+
     // Generate slug from name
-    const slug = slugify(name);
+    const slug = slugify(sanitizedName);
 
     // Check if slug already exists
     const existingProduct = await prisma.product.findUnique({
@@ -81,12 +87,12 @@ export async function POST(request: NextRequest) {
 
     const product = await prisma.product.create({
       data: {
-        name,
+        name: sanitizedName,
         slug,
-        description,
+        description: sanitizedDescription,
         price: parseFloat(price),
-        category,
-        image: image || "/images/placeholder-product.jpg",
+        category: sanitizedCategory,
+        image: image || "/images/placeholder-product.svg",
         featured: featured || false,
         available: available !== false, // Default to true
       },

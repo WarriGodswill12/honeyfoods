@@ -25,6 +25,7 @@ export function Header() {
   const navLinks = [
     { label: "Home", href: "/" },
     { label: "About", href: "/about" },
+    { label: "Gallery", href: "/gallery" },
     { label: "Contact", href: "/contact" },
   ];
 
@@ -74,11 +75,12 @@ export function Header() {
           <Link
             href="/"
             className="group flex items-center absolute left-1/2 -translate-x-1/2"
+            aria-label={siteConfig.name}
           >
             <img
               src="/logo.png"
               alt={siteConfig.name}
-              className="h-16 sm:h-20 md:h-24 lg:h-28 w-auto transition-transform group-hover:scale-105"
+              className="h-28 sm:h-32 md:h-36 lg:h-40 w-auto transition-transform group-hover:scale-105"
             />
           </Link>
 

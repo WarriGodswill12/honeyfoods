@@ -14,6 +14,7 @@ import {
   Home,
   Download,
   Printer,
+  CreditCard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatPrice, formatDate } from "@/lib/utils";
@@ -36,7 +37,7 @@ interface OrderDetails {
   customerPhone: string;
   deliveryAddress: string;
   customNote: string | null;
-  items: OrderItem[];
+  orderItems: OrderItem[];
   subtotal: number;
   deliveryFee: number;
   total: number;
@@ -51,6 +52,12 @@ function OrderConfirmationContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const orderId = searchParams.get("orderId");
+  const paymentIntent = searchParams.get("payment_intent");
+  const paymentIntentClientSecret = searchParams.get(
+    "payment_intent_client_secret"
+  );
+  const redirectStatus = searchParams.get("redirect_status");
+
   const [order, setOrder] = useState<OrderDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -58,6 +65,13 @@ function OrderConfirmationContent() {
   useEffect(() => {
     if (!orderId) {
       router.push("/");
+      return;
+    }
+
+    // Check if payment was cancelled or failed
+    if (redirectStatus === "failed") {
+      setError("Payment was cancelled or failed. Please try again.");
+      setLoading(false);
       return;
     }
 
@@ -76,6 +90,18 @@ function OrderConfirmationContent() {
         }
 
         const data = await response.json();
+
+        // Verify payment status matches order
+        if (
+          data.paymentStatus !== "paid" &&
+          data.paymentStatus !== "succeeded"
+        ) {
+          setError(
+            "Payment not completed. Please complete your payment to view order details."
+          );
+          return;
+        }
+
         setOrder(data);
       } catch (error) {
         console.error("Error fetching order:", error);
@@ -86,7 +112,7 @@ function OrderConfirmationContent() {
     };
 
     fetchOrder();
-  }, [orderId, router]);
+  }, [orderId, redirectStatus, router]);
 
   const handlePrintReceipt = () => {
     window.print();
@@ -104,25 +130,52 @@ function OrderConfirmationContent() {
   }
 
   if (error || !order) {
+    const isCancelledPayment =
+      error?.includes("cancelled") || error?.includes("not completed");
+
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
-        <div className="text-center">
-          <div className="bg-red-100 rounded-full p-4 inline-block mb-4">
-            <Package className="h-12 w-12 text-red-600" />
+        <div className="text-center max-w-md">
+          <div
+            className={`${
+              isCancelledPayment ? "bg-yellow-100" : "bg-red-100"
+            } rounded-full p-4 inline-block mb-4`}
+          >
+            <Package
+              className={`h-12 w-12 ${
+                isCancelledPayment ? "text-yellow-600" : "text-red-600"
+              }`}
+            />
           </div>
           <h1 className="text-2xl md:text-3xl font-bold text-charcoal-black mb-4">
-            {error || "Order Not Found"}
+            {isCancelledPayment
+              ? "Payment Required"
+              : error || "Order Not Found"}
           </h1>
           <p className="text-gray-600 mb-6">
-            We couldn't find the order you're looking for. Please check your
-            order number or contact support.
+            {isCancelledPayment
+              ? "Your order has been created but payment was not completed. Please complete the payment to proceed with your order."
+              : "We couldn't find the order you're looking for. Please check your order number or contact support."}
           </p>
-          <Link href="/">
-            <Button>
-              <Home className="w-4 h-4 mr-2" />
-              Return Home
-            </Button>
-          </Link>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            {isCancelledPayment && orderId && (
+              <Link href={`/checkout?orderId=${orderId}`}>
+                <Button className="w-full sm:w-auto">
+                  <CreditCard className="w-4 h-4 mr-2" />
+                  Complete Payment
+                </Button>
+              </Link>
+            )}
+            <Link href="/">
+              <Button
+                variant={isCancelledPayment ? "outline" : "default"}
+                className="w-full sm:w-auto"
+              >
+                <Home className="w-4 h-4 mr-2" />
+                Return Home
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -240,7 +293,7 @@ function OrderConfirmationContent() {
               Order Items
             </h2>
             <div className="space-y-4">
-              {order.items.map((item) => (
+              {order.orderItems.map((item) => (
                 <div
                   key={item.id}
                   className="flex gap-4 pb-4 border-b last:border-b-0"

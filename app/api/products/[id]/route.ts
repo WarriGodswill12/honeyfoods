@@ -84,7 +84,8 @@ export async function PUT(
         description,
         price: price ? parseFloat(price) : undefined,
         category,
-        image,
+        image:
+          image || existingProduct.image || "/images/placeholder-product.svg",
         featured,
         available,
       },

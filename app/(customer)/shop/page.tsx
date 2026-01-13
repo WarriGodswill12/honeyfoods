@@ -233,13 +233,13 @@ function ShopPageContent() {
                 <Link href={`/shop/${slugify(product.name)}`} className="block">
                   <div className="relative aspect-square bg-soft-cream">
                     <Image
-                      src={product.image}
+                      src={product.image || "/images/placeholder-product.svg"}
                       alt={product.name}
                       fill
                       className="object-cover group-hover:scale-105 transition-transform duration-500"
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
-                        target.src = "/images/placeholder-product.jpg";
+                        target.src = "/images/placeholder-product.svg";
                       }}
                     />
                     {product.featured && (

@@ -32,7 +32,7 @@ import {
 } from "lucide-react";
 
 interface GalleryImage {
-  id: number;
+  id: string;
   type: "hero" | "gallery";
   url: string;
   alt: string;
@@ -116,64 +116,18 @@ export default function GalleryManagement() {
     }
   };
 
-  const loadImages = () => {
-    // Load from localStorage for now
-    const stored = localStorage.getItem("galleryImages");
-    if (stored) {
-      setImages(JSON.parse(stored));
-    } else {
-      // Initialize with current images
-      const defaultImages: GalleryImage[] = [
-        {
-          id: 1,
-          type: "hero",
-          url: "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=1920&q=80",
-          alt: "Jollof Rice",
-          order: 1,
-        },
-        {
-          id: 2,
-          type: "hero",
-          url: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=1920&q=80",
-          alt: "Custom Cakes",
-          order: 2,
-        },
-        {
-          id: 3,
-          type: "hero",
-          url: "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=1920&q=80",
-          alt: "Fresh Pastries",
-          order: 3,
-        },
-        {
-          id: 4,
-          type: "hero",
-          url: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=1920&q=80",
-          alt: "Party Platter",
-          order: 4,
-        },
-        {
-          id: 5,
-          type: "gallery",
-          url: "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=800&q=80",
-          alt: "Delicious Jollof Rice",
-          order: 1,
-        },
-        {
-          id: 6,
-          type: "gallery",
-          url: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=800&q=80",
-          alt: "Beautiful Custom Cake",
-          order: 2,
-        },
-      ];
-      localStorage.setItem("galleryImages", JSON.stringify(defaultImages));
-      setImages(defaultImages);
+  const loadImages = async () => {
+    try {
+      const response = await fetch("/api/gallery");
+      if (!response.ok) throw new Error("Failed to fetch gallery images");
+      const data = await response.json();
+      setImages(data);
+    } catch (error) {
+      console.error("Error fetching gallery images:", error);
     }
   };
 
   const saveImages = (updatedImages: GalleryImage[]) => {
-    localStorage.setItem("galleryImages", JSON.stringify(updatedImages));
     setImages(updatedImages);
   };
 
@@ -199,31 +153,58 @@ export default function GalleryManagement() {
     setIsModalOpen(true);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (editingImage) {
-      // Update existing image
-      const updated = images.map((img) =>
-        img.id === editingImage.id ? { ...img, ...formData } : img
-      );
-      saveImages(updated);
-    } else {
-      // Add new image
-      const newImage: GalleryImage = {
-        id: Date.now(),
-        ...formData,
-      };
-      saveImages([...images, newImage]);
-    }
+    try {
+      if (editingImage) {
+        // Update existing image
+        const response = await fetch(`/api/gallery/${editingImage.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData),
+        });
 
-    setIsModalOpen(false);
+        if (!response.ok) throw new Error("Failed to update image");
+        const updated = await response.json();
+        const newImages = images.map((img) =>
+          img.id === editingImage.id ? updated : img
+        );
+        saveImages(newImages);
+      } else {
+        // Add new image
+        const response = await fetch("/api/gallery", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData),
+        });
+
+        if (!response.ok) throw new Error("Failed to create image");
+        const newImage = await response.json();
+        saveImages([...images, newImage]);
+      }
+
+      setIsModalOpen(false);
+    } catch (error: any) {
+      console.error("Error saving image:", error);
+      alert(error.message || "Failed to save image");
+    }
   };
 
-  const handleDelete = (id: number) => {
+  const handleDelete = async (id: string) => {
     if (confirm("Are you sure you want to delete this image?")) {
-      const updated = images.filter((img) => img.id !== id);
-      saveImages(updated);
+      try {
+        const response = await fetch(`/api/gallery/${id}`, {
+          method: "DELETE",
+        });
+
+        if (!response.ok) throw new Error("Failed to delete image");
+        const updated = images.filter((img) => img.id !== id);
+        saveImages(updated);
+      } catch (error: any) {
+        console.error("Error deleting image:", error);
+        alert(error.message || "Failed to delete image");
+      }
     }
   };
 

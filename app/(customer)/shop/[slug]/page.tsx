@@ -243,7 +243,7 @@ export default function ProductDetailPage() {
                 <CarouselItem>
                   <div className="relative aspect-square rounded-2xl sm:rounded-3xl overflow-hidden bg-soft-cream shadow-lg">
                     <Image
-                      src={product.image}
+                      src={product.image || "/images/placeholder-product.svg"}
                       alt={product.name}
                       fill
                       className="object-cover"
@@ -458,7 +458,10 @@ export default function ProductDetailPage() {
                   <div className="group bg-white rounded-xl sm:rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300">
                     <div className="relative aspect-square bg-gray-100">
                       <Image
-                        src={relatedProduct.image}
+                        src={
+                          relatedProduct.image ||
+                          "/images/placeholder-product.svg"
+                        }
                         alt={relatedProduct.name}
                         fill
                         className="object-cover group-hover:scale-105 transition-transform duration-500"

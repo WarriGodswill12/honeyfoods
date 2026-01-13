@@ -34,9 +34,12 @@ export function PaymentForm({ orderId, onSuccess, onError }: PaymentFormProps) {
     setMessage(null);
 
     try {
-      // Confirm payment
+      // Confirm payment with return_url for redirect-based methods
       const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
+        confirmParams: {
+          return_url: `${window.location.origin}/order-confirmation?orderId=${orderId}`,
+        },
         redirect: "if_required",
       });
 
@@ -72,7 +75,13 @@ export function PaymentForm({ orderId, onSuccess, onError }: PaymentFormProps) {
       <PaymentElement
         options={{
           layout: "tabs",
-          paymentMethodOrder: ["apple_pay", "google_pay", "card"],
+          paymentMethodOrder: [
+            "apple_pay",
+            "google_pay",
+            "amazon_pay",
+            "revolut_pay",
+            "card",
+          ],
         }}
       />
 

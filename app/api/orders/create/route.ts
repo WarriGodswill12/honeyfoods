@@ -1,6 +1,7 @@
 // API route to create order and return order ID
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { sanitizeString } from "@/lib/sanitize";
 
 export async function POST(request: NextRequest) {
   try {
@@ -40,29 +41,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Sanitize string inputs
+    // Sanitize string inputs to prevent XSS
     const sanitizedInfo = {
-      fullName: String(customerInfo.fullName || "")
-        .trim()
-        .substring(0, 100),
-      email: String(customerInfo.email || "")
-        .trim()
-        .toLowerCase()
-        .substring(0, 255),
-      phone: String(customerInfo.phone || "")
-        .trim()
-        .substring(0, 20),
-      address: String(customerInfo.address || "")
-        .trim()
-        .substring(0, 500),
-      city: String(customerInfo.city || "")
-        .trim()
-        .substring(0, 100),
-      postcode: String(customerInfo.postcode || "")
-        .trim()
-        .substring(0, 20),
+      fullName: sanitizeString(customerInfo.fullName).substring(0, 100),
+      email: sanitizeString(customerInfo.email).toLowerCase().substring(0, 255),
+      phone: sanitizeString(customerInfo.phone).substring(0, 20),
+      address: sanitizeString(customerInfo.address).substring(0, 500),
+      city: sanitizeString(customerInfo.city).substring(0, 100),
+      postcode: sanitizeString(customerInfo.postcode).substring(0, 20),
       deliveryNotes: customerInfo.deliveryNotes
-        ? String(customerInfo.deliveryNotes).trim().substring(0, 500)
+        ? sanitizeString(customerInfo.deliveryNotes).substring(0, 500)
         : null,
     };
 
@@ -101,7 +89,93 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create order with sanitized data
+    // SECURITY: Fetch actual product prices from database to prevent price manipulation
+    const productsMap = new Map(existingProducts.map((p: any) => [p.id, p]));
+
+    // Fetch full product details including prices
+    const productsWithPrices = await prisma.product.findMany({
+      where: {
+        id: {
+          in: productIds,
+        },
+      },
+      select: {
+        id: true,
+        name: true,
+        price: true,
+        available: true,
+      },
+    });
+
+    // Recalculate subtotal from actual database prices
+    let calculatedSubtotal = 0;
+    const validatedItems = [];
+
+    for (const item of items) {
+      const product = productsWithPrices.find((p) => p.id === item.productId);
+
+      if (!product) {
+        return NextResponse.json(
+          { error: "Product not found" },
+          { status: 400 }
+        );
+      }
+
+      if (!product.available) {
+        return NextResponse.json(
+          { error: `Product "${product.name}" is no longer available` },
+          { status: 400 }
+        );
+      }
+
+      // Use DATABASE price, not client-provided price
+      const itemSubtotal = product.price * item.quantity;
+      calculatedSubtotal += itemSubtotal;
+
+      validatedItems.push({
+        productId: product.id,
+        name: product.name,
+        quantity: item.quantity,
+        price: product.price, // Database price
+        subtotal: itemSubtotal,
+      });
+    }
+
+    // Fetch delivery fee from settings
+    const settings = await prisma.settings.findFirst();
+    const calculatedDeliveryFee =
+      calculatedSubtotal >= (settings?.freeDeliveryThreshold || 50)
+        ? 0
+        : settings?.deliveryFee || 5;
+
+    const calculatedTotal = calculatedSubtotal + calculatedDeliveryFee;
+
+    // SECURITY: Validate client-provided totals match server calculations
+    // Allow 0.01 difference for floating point rounding
+    if (
+      Math.abs(calculatedSubtotal - subtotal) > 0.01 ||
+      Math.abs(calculatedDeliveryFee - deliveryFee) > 0.01 ||
+      Math.abs(calculatedTotal - total) > 0.01
+    ) {
+      console.error("Price mismatch detected:", {
+        clientSubtotal: subtotal,
+        serverSubtotal: calculatedSubtotal,
+        clientDeliveryFee: deliveryFee,
+        serverDeliveryFee: calculatedDeliveryFee,
+        clientTotal: total,
+        serverTotal: calculatedTotal,
+      });
+
+      return NextResponse.json(
+        {
+          error:
+            "Price mismatch detected. Please refresh your cart and try again.",
+        },
+        { status: 400 }
+      );
+    }
+
+    // Create order with server-validated data
     const order = await prisma.order.create({
       data: {
         orderNumber,
@@ -110,19 +184,13 @@ export async function POST(request: NextRequest) {
         customerPhone: sanitizedInfo.phone,
         deliveryAddress: `${sanitizedInfo.address}, ${sanitizedInfo.city}, ${sanitizedInfo.postcode}`,
         customNote: sanitizedInfo.deliveryNotes,
-        subtotal,
-        deliveryFee,
-        total,
+        subtotal: calculatedSubtotal, // Use server-calculated value
+        deliveryFee: calculatedDeliveryFee, // Use server-calculated value
+        total: calculatedTotal, // Use server-calculated value
         status: "PENDING",
         paymentStatus: "PENDING",
         orderItems: {
-          create: items.map((item: any) => ({
-            productId: item.productId,
-            name: item.name,
-            quantity: item.quantity,
-            price: item.price,
-            subtotal: item.price * item.quantity,
-          })),
+          create: validatedItems,
         },
       },
       include: {
