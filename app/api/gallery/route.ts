@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { type = "gallery", url, alt, order } = body;
+    const { type = "gallery", url, alt, order, featured = false } = body;
 
     if (!url || !alt) {
       return NextResponse.json(
@@ -57,6 +57,7 @@ export async function POST(req: NextRequest) {
         type: sanitizedType,
         url: sanitizedUrl,
         alt: sanitizedAlt,
+        featured: Boolean(featured),
         order: order ?? 0,
       },
     });

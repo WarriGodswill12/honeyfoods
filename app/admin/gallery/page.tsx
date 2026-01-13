@@ -36,6 +36,7 @@ interface GalleryImage {
   type: "hero" | "gallery";
   url: string;
   alt: string;
+  featured: boolean;
   order: number;
 }
 
@@ -47,6 +48,7 @@ export default function GalleryManagement() {
     type: "gallery" as "hero" | "gallery",
     url: "",
     alt: "",
+    featured: false,
     order: 0,
   });
   const [isUploadingImage, setIsUploadingImage] = useState(false);
@@ -137,6 +139,7 @@ export default function GalleryManagement() {
       type: "gallery",
       url: "",
       alt: "",
+      featured: false,
       order: 0,
     });
     setIsModalOpen(true);
@@ -148,6 +151,7 @@ export default function GalleryManagement() {
       type: image.type,
       url: image.url,
       alt: image.alt,
+      featured: image.featured,
       order: image.order,
     });
     setIsModalOpen(true);
@@ -495,6 +499,11 @@ export default function GalleryManagement() {
                   alt={image.alt}
                   className="w-full h-full object-cover"
                 />
+                {image.featured && (
+                  <div className="absolute top-2 left-2 bg-honey-gold text-white px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
+                    ⭐ Featured
+                  </div>
+                )}
               </div>
               <div className="p-4 bg-white">
                 <p className="font-semibold text-sm text-charcoal-black mb-1 truncate">
@@ -647,6 +656,32 @@ export default function GalleryManagement() {
                   Lower numbers appear first
                 </p>
               </div>
+
+              {formData.type === "gallery" && (
+                <div className="space-y-2">
+                  <label className="flex items-center gap-3 p-3 border-2 border-honey-gold/20 rounded-lg hover:bg-honey-gold/5 cursor-pointer transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={formData.featured}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          featured: e.target.checked,
+                        })
+                      }
+                      className="w-5 h-5 rounded border-gray-300 text-honey-gold focus:ring-honey-gold"
+                    />
+                    <div>
+                      <p className="font-semibold text-charcoal-black">
+                        Featured Photo
+                      </p>
+                      <p className="text-xs text-gray-600">
+                        Featured photos will be displayed in the homepage slider
+                      </p>
+                    </div>
+                  </label>
+                </div>
+              )}
 
               {formData.url && (
                 <div className="space-y-2">

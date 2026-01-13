@@ -23,8 +23,7 @@ import type { Product } from "@/types/product";
 // Hero Section with Background Image Slider
 function HeroSection() {
   const [currentSlide, setCurrentSlide] = useState(0);
-
-  const slides = [
+  const [slides, setSlides] = useState([
     {
       image:
         "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=1920&q=80",
@@ -45,7 +44,33 @@ function HeroSection() {
         "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=1920&q=80",
       alt: "Party Platter",
     },
-  ];
+  ]);
+
+  // Fetch featured gallery images on component mount
+  useEffect(() => {
+    const fetchFeaturedImages = async () => {
+      try {
+        const response = await fetch("/api/gallery/featured");
+        if (response.ok) {
+          const data = await response.json();
+          // Use featured images if available, otherwise use defaults
+          if (data.length > 0) {
+            setSlides(
+              data.map((img: any) => ({
+                image: img.url,
+                alt: img.alt,
+              }))
+            );
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching featured gallery images:", error);
+        // Silently fail and use default slides
+      }
+    };
+
+    fetchFeaturedImages();
+  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => {

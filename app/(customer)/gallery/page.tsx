@@ -45,23 +45,33 @@ export default function GalleryPage() {
         delay={0.05}
         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 max-w-6xl mx-auto"
       >
-        {images.map((img) => (
-          <button
-            key={img.id}
-            className="group relative overflow-hidden rounded-2xl aspect-square shadow-sm hover:shadow-xl transition-all"
-            onClick={() => setSelected(img)}
-            aria-label={img.alt}
-          >
-            {/* Use next/image for optimization if possible */}
-            <Image
-              src={img.url}
-              alt={img.alt}
-              fill
-              className="object-cover group-hover:scale-105 transition-transform duration-500"
-            />
-            <div className="absolute inset-0 bg-linear-to-t from-charcoal-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-          </button>
-        ))}
+        {images.length === 0 ? (
+          <div className="col-span-full text-center py-20">
+            <p className="text-gray-500 text-lg mb-4">No gallery images yet.</p>
+            <p className="text-gray-400 text-sm">
+              Check back soon to see our beautiful collection of dishes and
+              creations!
+            </p>
+          </div>
+        ) : (
+          images.map((img) => (
+            <button
+              key={img.id}
+              className="group relative overflow-hidden rounded-2xl aspect-square shadow-sm hover:shadow-xl transition-all"
+              onClick={() => setSelected(img)}
+              aria-label={img.alt}
+            >
+              {/* Use next/image for optimization if possible */}
+              <Image
+                src={img.url}
+                alt={img.alt}
+                fill
+                className="object-cover group-hover:scale-105 transition-transform duration-500"
+              />
+              <div className="absolute inset-0 bg-linear-to-t from-charcoal-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            </button>
+          ))
+        )}
       </StaggerChildren>
 
       {/* Simple Lightbox */}

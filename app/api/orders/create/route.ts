@@ -112,7 +112,10 @@ export async function POST(request: NextRequest) {
     const validatedItems = [];
 
     for (const item of items) {
-      const product = productsWithPrices.find((p) => p.id === item.productId);
+      const product = productsWithPrices.find(
+        (p: { id: string; name: string; price: number; available: boolean }) =>
+          p.id === item.productId
+      );
 
       if (!product) {
         return NextResponse.json(

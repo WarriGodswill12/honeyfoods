@@ -49,7 +49,7 @@ export async function PATCH(
 
     const { id } = await params;
     const body = await req.json();
-    const { type, url, alt, order } = body;
+    const { type, url, alt, order, featured } = body;
 
     const image = await prisma.galleryImage.update({
       where: { id },
@@ -58,6 +58,7 @@ export async function PATCH(
         ...(url && { url }),
         ...(alt && { alt }),
         ...(order !== undefined && { order }),
+        ...(featured !== undefined && { featured: Boolean(featured) }),
       },
     });
 
