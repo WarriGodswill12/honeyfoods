@@ -1,8 +1,6 @@
 // Seed script for initial data
-import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
-
-const prisma = new PrismaClient();
+import { prisma } from "../lib/prisma";
 
 async function main() {
   console.log("Starting seed...");
@@ -308,11 +306,7 @@ async function main() {
   console.log("Password:", process.env.ADMIN_PASSWORD || "admin123");
 }
 
-main()
-  .catch((e) => {
-    console.error("Error during seed:", e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+main().catch((e) => {
+  console.error("Error during seed:", e);
+  process.exit(1);
+});
