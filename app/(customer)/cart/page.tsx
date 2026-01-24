@@ -25,17 +25,24 @@ export default function CartPage() {
   } | null>(null);
 
   const subtotal = getTotalPrice();
+  // Convert settings from pence to pounds for calculations
   const deliveryFee =
-    settings && subtotal >= settings.freeDeliveryThreshold
+    settings && subtotal >= settings.freeDeliveryThreshold / 100
       ? 0
-      : settings?.deliveryFee || DEFAULT_DELIVERY_FEE;
+      : (settings?.deliveryFee || DEFAULT_DELIVERY_FEE) / 100;
   const total = subtotal + deliveryFee;
 
   // Fetch settings
   useEffect(() => {
     fetch("/api/settings")
       .then((res) => res.json())
-      .then((data) => setSettings(data))
+      .then((data) => {
+        // Convert settings from pence to pounds for display/calculation
+        setSettings({
+          deliveryFee: data.deliveryFee,
+          freeDeliveryThreshold: data.freeDeliveryThreshold,
+        });
+      })
       .catch((err) => console.error("Error fetching settings:", err));
   }, []);
 

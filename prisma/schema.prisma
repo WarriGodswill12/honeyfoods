@@ -32,7 +32,7 @@ model Product {
   name          String
   slug          String      @unique
   description   String?
-  price         Float
+  price         Int
   image         String
   imagePublicId String?     // Cloudinary public ID for deletion
   available     Boolean     @default(true)
@@ -56,9 +56,9 @@ model Order {
   deliveryAddress String
   customNote      String?
   
-  subtotal        Float
-  deliveryFee     Float         @default(0)
-  total           Float
+  subtotal        Int
+  deliveryFee     Int         @default(0)
+  total           Int
   
   status          OrderStatus   @default(PENDING)
   paymentStatus   PaymentStatus @default(PENDING)
@@ -99,9 +99,9 @@ model OrderItem {
   productId String
   
   name      String   // Snapshot of product name
-  price     Float    // Snapshot of price at time of order
+  price     Int      // Snapshot of price at time of order
   quantity  Int
-  subtotal  Float
+  subtotal  Int
   
   order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product   Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
@@ -115,7 +115,7 @@ model Payment {
   id                String        @id @default(cuid())
   orderId           String        @unique
   
-  amount            Float
+  amount            Int
   currency          String        @default("NGN")
   
   provider          String        // 'stripe', 'paystack', 'applepay'
@@ -150,9 +150,9 @@ model GalleryImage {
 // Store Settings model
 model Settings {
   id                      String   @id @default(cuid())
-  deliveryFee             Float    @default(1500)
-  freeDeliveryThreshold   Float    @default(10000)
-  minOrderAmount          Float    @default(500)
+  deliveryFee             Int    @default(1500)
+  freeDeliveryThreshold   Int    @default(10000)
+  minOrderAmount          Int    @default(500)
   storeName               String   @default("HoneyFoods")
   storeTagline            String   @default("Taste is everything")
   storeEmail              String   @default("info@honeyfoods.com")

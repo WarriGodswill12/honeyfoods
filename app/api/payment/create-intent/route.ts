@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     if (!customerEmail || typeof customerEmail !== "string") {
       return NextResponse.json(
         { error: "Invalid customer email" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     if (!emailRegex.test(customerEmail)) {
       return NextResponse.json(
         { error: "Invalid email format" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     // Create payment intent with Stripe
     const stripeProvider = new StripeProvider();
     const paymentIntent = await stripeProvider.createPaymentIntent({
-      amount: Math.round(Number(order.total) * 100), // Convert to cents
+      amount: order.total, // Already in pence
       currency: "gbp", // UK pounds
       orderId: order.id,
       customerEmail,
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
     console.error("Error creating payment intent:", error);
     return NextResponse.json(
       { error: error.message || "Failed to create payment intent" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

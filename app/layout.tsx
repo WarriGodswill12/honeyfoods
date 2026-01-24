@@ -115,16 +115,7 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${playfair.variable} ${montserrat.variable} ${poppins.variable} ${brunelis.variable} ${tryFat.variable} ${stay.variable} ${refind.variable} ${aveburg.variable} ${belarin.variable} ${blokna.variable} ${fedro.variable} ${regalorn.variable} antialiased`}
       >
-        <div className="fixed inset-0 bg-gray-900 flex items-center justify-center z-50">
-          <div className="text-center">
-            <h1 className="text-4xl font-bold text-white mb-4">
-              This website is currently down
-            </h1>
-            <p className="text-gray-400 text-lg">
-              We'll be back soon. Thank you for your patience.
-            </p>
-          </div>
-        </div>
+        <CartProvider>{children}</CartProvider>
       </body>
     </html>
   );

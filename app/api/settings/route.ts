@@ -20,7 +20,7 @@ export async function GET() {
     console.error("Error fetching settings:", error);
     return NextResponse.json(
       { error: "Failed to fetch settings" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -32,26 +32,26 @@ export async function PUT(request: NextRequest) {
     if (!session) {
       return NextResponse.json(
         { error: "Unauthorized. Admin access required." },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     const body = await request.json();
 
-    // Validate numeric fields
-    const numericFields = [
+    // Validate integer fields
+    const intFields = [
       "deliveryFee",
       "freeDeliveryThreshold",
       "minOrderAmount",
     ];
 
-    for (const field of numericFields) {
+    for (const field of intFields) {
       if (body[field] !== undefined) {
         const value = Number(body[field]);
-        if (isNaN(value) || value < 0) {
+        if (!Number.isInteger(value) || value < 0) {
           return NextResponse.json(
-            { error: `${field} must be a non-negative number` },
-            { status: 400 }
+            { error: `${field} must be a non-negative integer` },
+            { status: 400 },
           );
         }
       }
@@ -76,7 +76,7 @@ export async function PUT(request: NextRequest) {
     console.error("Error updating settings:", error);
     return NextResponse.json(
       { error: "Failed to update settings" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

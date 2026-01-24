@@ -47,9 +47,9 @@ export default function SettingsPage() {
       const data = await response.json();
       setSettings(data);
       setFormData({
-        deliveryFee: data.deliveryFee,
-        freeDeliveryThreshold: data.freeDeliveryThreshold,
-        minOrderAmount: data.minOrderAmount,
+        deliveryFee: data.deliveryFee / 100, // convert to pounds for display
+        freeDeliveryThreshold: data.freeDeliveryThreshold / 100, // convert to pounds for display
+        minOrderAmount: data.minOrderAmount / 100, // convert to pounds for display
       });
     } catch (error) {
       console.error("Error fetching settings:", error);
@@ -64,11 +64,18 @@ export default function SettingsPage() {
     setIsSaving(true);
     setMessage(null);
 
+    // Convert pounds to pence before saving
+    const payload = {
+      deliveryFee: Math.round(formData.deliveryFee * 100),
+      freeDeliveryThreshold: Math.round(formData.freeDeliveryThreshold * 100),
+      minOrderAmount: Math.round(formData.minOrderAmount * 100),
+    };
+
     try {
       const response = await fetch("/api/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {

@@ -17,6 +17,35 @@ export default function GalleryPage() {
   const [images, setImages] = useState<GalleryImage[]>([]);
   const [selected, setSelected] = useState<GalleryImage | null>(null);
 
+  // Find index of selected image
+  const selectedIndex = selected
+    ? images.findIndex((img) => img.id === selected.id)
+    : -1;
+
+  // Carousel navigation handlers
+  const showPrev = () => {
+    if (images.length && selectedIndex > 0) {
+      setSelected(images[selectedIndex - 1]);
+    }
+  };
+  const showNext = () => {
+    if (images.length && selectedIndex < images.length - 1) {
+      setSelected(images[selectedIndex + 1]);
+    }
+  };
+
+  // Keyboard navigation
+  useEffect(() => {
+    if (!selected) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft") showPrev();
+      if (e.key === "ArrowRight") showNext();
+      if (e.key === "Escape") setSelected(null);
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [selected, selectedIndex, images]);
+
   useEffect(() => {
     const fetchGallery = async () => {
       try {
@@ -77,16 +106,52 @@ export default function GalleryPage() {
       {/* Simple Lightbox */}
       {selected && (
         <div
-          className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-2 sm:p-4"
           onClick={() => setSelected(null)}
         >
-          <div className="relative max-w-3xl w-full">
+          <div
+            className="relative w-full max-w-2xl sm:max-w-3xl lg:max-w-5xl xl:max-w-7xl mx-auto"
+            onClick={(e) => e.stopPropagation()}
+            // Touch swipe support
+            onTouchStart={(e) => {
+              e.currentTarget.dataset.touchStartX = String(
+                e.touches[0].clientX,
+              );
+            }}
+            onTouchEnd={(e) => {
+              const startX = Number(e.currentTarget.dataset.touchStartX);
+              const endX = e.changedTouches[0].clientX;
+              if (startX - endX > 50) showNext();
+              if (endX - startX > 50) showPrev();
+            }}
+          >
+            {/* Left arrow */}
+            {selectedIndex > 0 && (
+              <button
+                className="absolute left-2 top-1/2 -translate-y-1/2 p-2 bg-white/80 hover:bg-white rounded-full shadow-lg z-10 sm:left-0 sm:-translate-x-full"
+                onClick={showPrev}
+                aria-label="Previous image"
+              >
+                <span className="text-2xl">&#8592;</span>
+              </button>
+            )}
+            {/* Right arrow */}
+            {selectedIndex < images.length - 1 && (
+              <button
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-white/80 hover:bg-white rounded-full shadow-lg z-10 sm:right-0 sm:translate-x-full"
+                onClick={showNext}
+                aria-label="Next image"
+              >
+                <span className="text-2xl">&#8594;</span>
+              </button>
+            )}
             <Image
               src={selected.url}
               alt={selected.alt}
-              width={1200}
-              height={800}
-              className="w-full h-auto rounded-xl"
+              width={1920}
+              height={1080}
+              className="w-full h-auto max-h-[80vh] sm:max-h-[90vh] rounded-xl object-contain"
+              style={{ minHeight: "300px" }}
             />
             <Button
               variant="secondary"

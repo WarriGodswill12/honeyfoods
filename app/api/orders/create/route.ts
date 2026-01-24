@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
     if (!customerInfo || typeof customerInfo !== "object") {
       return NextResponse.json(
         { error: "Invalid customer information" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     if (customerInfo.email && !emailRegex.test(customerInfo.email)) {
       return NextResponse.json(
         { error: "Invalid email format" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -71,10 +71,10 @@ export async function POST(request: NextRequest) {
     });
 
     const existingProductIds = new Set(
-      existingProducts.map((p: { id: string }) => p.id)
+      existingProducts.map((p: { id: string }) => p.id),
     );
     const invalidProductIds = productIds.filter(
-      (id: string) => !existingProductIds.has(id)
+      (id: string) => !existingProductIds.has(id),
     );
 
     if (invalidProductIds.length > 0) {
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
             "Some products in your cart no longer exist. Please refresh and try again.",
           invalidProducts: invalidProductIds,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -114,20 +114,20 @@ export async function POST(request: NextRequest) {
     for (const item of items) {
       const product = productsWithPrices.find(
         (p: { id: string; name: string; price: number; available: boolean }) =>
-          p.id === item.productId
+          p.id === item.productId,
       );
 
       if (!product) {
         return NextResponse.json(
           { error: "Product not found" },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
       if (!product.available) {
         return NextResponse.json(
-          { error: `Product "${product.name}" is no longer available` },
-          { status: 400 }
+          { error: `Product \"${product.name}\" is no longer available` },
+          { status: 400 },
         );
       }
 
@@ -139,26 +139,25 @@ export async function POST(request: NextRequest) {
         productId: product.id,
         name: product.name,
         quantity: item.quantity,
-        price: product.price, // Database price
-        subtotal: itemSubtotal,
+        price: product.price, // Database price, integer pence
+        subtotal: itemSubtotal, // integer pence
       });
     }
 
     // Fetch delivery fee from settings
     const settings = await prisma.settings.findFirst();
     const calculatedDeliveryFee =
-      calculatedSubtotal >= (settings?.freeDeliveryThreshold || 50)
+      calculatedSubtotal >= (settings?.freeDeliveryThreshold || 5000)
         ? 0
-        : settings?.deliveryFee || 5;
+        : settings?.deliveryFee || 1500;
 
     const calculatedTotal = calculatedSubtotal + calculatedDeliveryFee;
 
-    // SECURITY: Validate client-provided totals match server calculations
-    // Allow 0.01 difference for floating point rounding
+    // Validate client-provided totals match server calculations (no floating point rounding needed)
     if (
-      Math.abs(calculatedSubtotal - subtotal) > 0.01 ||
-      Math.abs(calculatedDeliveryFee - deliveryFee) > 0.01 ||
-      Math.abs(calculatedTotal - total) > 0.01
+      calculatedSubtotal !== subtotal ||
+      calculatedDeliveryFee !== deliveryFee ||
+      calculatedTotal !== total
     ) {
       console.error("Price mismatch detected:", {
         clientSubtotal: subtotal,
@@ -174,7 +173,7 @@ export async function POST(request: NextRequest) {
           error:
             "Price mismatch detected. Please refresh your cart and try again.",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -187,9 +186,9 @@ export async function POST(request: NextRequest) {
         customerPhone: sanitizedInfo.phone,
         deliveryAddress: `${sanitizedInfo.address}, ${sanitizedInfo.city}, ${sanitizedInfo.postcode}`,
         customNote: sanitizedInfo.deliveryNotes,
-        subtotal: calculatedSubtotal, // Use server-calculated value
-        deliveryFee: calculatedDeliveryFee, // Use server-calculated value
-        total: calculatedTotal, // Use server-calculated value
+        subtotal: calculatedSubtotal, // integer pence
+        deliveryFee: calculatedDeliveryFee, // integer pence
+        total: calculatedTotal, // integer pence
         status: "PENDING",
         paymentStatus: "PENDING",
         orderItems: {
@@ -221,7 +220,7 @@ export async function POST(request: NextRequest) {
           "X-Content-Type-Options": "nosniff",
           "X-Frame-Options": "DENY",
         },
-      }
+      },
     );
   }
 }
