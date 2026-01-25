@@ -70,7 +70,7 @@ export default function ProductDetailPage() {
 
       // Find product by slug
       const foundProduct = products.find(
-        (p: Product) => slugify(p.name) === params.slug
+        (p: Product) => slugify(p.name) === params.slug,
       );
 
       if (!foundProduct) {
@@ -97,7 +97,7 @@ export default function ProductDetailPage() {
 
       // Find size variations (products with same base name)
       const variations = products.filter(
-        (p: Product) => getBaseName(p.name) === baseName
+        (p: Product) => getBaseName(p.name) === baseName,
       );
       setSizeVariations(variations);
 
@@ -106,7 +106,8 @@ export default function ProductDetailPage() {
       const related = products
         .filter(
           (p: Product) =>
-            p.category === foundProduct.category && !variationIds.includes(p.id)
+            p.category === foundProduct.category &&
+            !variationIds.includes(p.id),
         )
         .slice(0, 3);
       setRelatedProducts(related);
@@ -130,7 +131,7 @@ export default function ProductDetailPage() {
         imageUrl: product.image,
         note: customNote || undefined,
       },
-      quantity
+      quantity,
     );
 
     setTimeout(() => {
@@ -145,7 +146,7 @@ export default function ProductDetailPage() {
 
   const handleSizeChange = (productId: string) => {
     const selectedProduct = sizeVariations.find(
-      (p) => p.id.toString() === productId
+      (p) => p.id.toString() === productId,
     );
     if (selectedProduct) {
       router.push(`/shop/${slugify(selectedProduct.name)}`);
@@ -204,7 +205,7 @@ export default function ProductDetailPage() {
                 <BreadcrumbItem>
                   <BreadcrumbLink
                     href={`/shop?category=${encodeURIComponent(
-                      product.category
+                      product.category,
                     )}`}
                   >
                     {product.category}
@@ -304,7 +305,7 @@ export default function ProductDetailPage() {
                           value={variation.id.toString()}
                         >
                           {size || variation.name} -{" "}
-                          {formatPrice(variation.price)}
+                          {formatPrice(variation.price * 100)}
                         </SelectItem>
                       );
                     })}
@@ -364,7 +365,7 @@ export default function ProductDetailPage() {
                   <span>
                     Price per unit:{" "}
                     <strong className="text-charcoal-black">
-                      {formatPrice(product.price)}
+                      {formatPrice(product.price * 100)}
                     </strong>
                   </span>
                 </div>
@@ -430,7 +431,7 @@ export default function ProductDetailPage() {
                   <>
                     <ShoppingCart className="h-5 w-5 mr-2" />
                     Add {quantity} to Cart -{" "}
-                    {formatPrice(product.price * quantity)}
+                    {formatPrice(product.price * quantity * 100)}
                   </>
                 )}
               </Button>
@@ -478,7 +479,7 @@ export default function ProductDetailPage() {
                         {relatedProduct.name}
                       </h3>
                       <p className="text-lg sm:text-xl font-bold text-honey-gold">
-                        {formatPrice(relatedProduct.price)}
+                        {formatPrice(relatedProduct.price * 100)}
                       </p>
                     </div>
                   </div>

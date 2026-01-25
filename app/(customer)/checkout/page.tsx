@@ -118,65 +118,68 @@ export default function CheckoutPage() {
     }
   };
 
-  const handleProceedToPayment = async () => {
-    if (!validateForm()) {
-      return;
+
+const handleProceedToPayment = async () => {
+  if (!validateForm()) {
+    return;
+  }
+
+  setIsProcessing(true);
+
+  try {
+    // Create order
+    const orderResponse = await fetch("/api/orders/create", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        customerInfo,
+        items: items.map((item) => ({
+          productId: item.productId,
+          name: item.name,
+          quantity: item.quantity,
+          price: Math.round(item.price * 100), // ✅ Convert pounds to pence (20 → 2000)
+        })),
+        subtotal: Math.round(subtotal * 100), // Convert to pence
+        deliveryFee: Math.round(deliveryFee * 100), // Convert to pence
+        total: Math.round(total * 100), // Convert to pence
+      }),
+    });
+
+    if (!orderResponse.ok) {
+      const errorData = await orderResponse.json();
+      console.error("Order creation failed:", errorData);
+      throw new Error(errorData.error || "Failed to create order");
     }
 
-    setIsProcessing(true);
+    const orderData = await orderResponse.json();
+    setOrderId(orderData.orderId);
 
-    try {
-      // 1. Create order
-      const orderResponse = await fetch("/api/orders/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          customerInfo,
-          items: items.map((item) => ({
-            productId: item.productId,
-            name: item.name,
-            quantity: item.quantity,
-            price: item.price,
-          })),
-          subtotal: Math.round(subtotal * 100),
-          deliveryFee: Math.round(deliveryFee * 100),
-          total: Math.round(total * 100),
-        }),
-      });
+    // Create payment intent
+    const paymentResponse = await fetch("/api/payment/create-intent", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        orderId: orderData.orderId,
+        customerEmail: customerInfo.email,
+      }),
+    });
 
-      if (!orderResponse.ok) {
-        const errorData = await orderResponse.json();
-        console.error("Order creation failed:", errorData);
-        throw new Error(errorData.error || "Failed to create order");
-      }
-
-      const orderData = await orderResponse.json();
-      setOrderId(orderData.orderId);
-
-      // 2. Create payment intent
-      const paymentResponse = await fetch("/api/payment/create-intent", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          orderId: orderData.orderId,
-          customerEmail: customerInfo.email,
-        }),
-      });
-
-      if (!paymentResponse.ok) {
-        throw new Error("Failed to initialize payment");
-      }
-
-      const paymentData = await paymentResponse.json();
-      setClientSecret(paymentData.clientSecret);
-      setShowPayment(true);
-    } catch (error: any) {
-      console.error("Error:", error);
-      alert(error.message || "Failed to process order");
-    } finally {
-      setIsProcessing(false);
+    if (!paymentResponse.ok) {
+      throw new Error("Failed to initialize payment");
     }
-  };
+
+    const paymentData = await paymentResponse.json();
+    setClientSecret(paymentData.clientSecret);
+    setShowPayment(true);
+  } catch (error: any) {
+    console.error("Error:", error);
+    alert(error.message || "Failed to process order");
+  } finally {
+    setIsProcessing(false);
+  }
+};
+
+
 
   const handlePaymentSuccess = (successOrderId: string) => {
     clearCart();

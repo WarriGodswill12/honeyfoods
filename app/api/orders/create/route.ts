@@ -89,9 +89,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // SECURITY: Fetch actual product prices from database to prevent price manipulation
-    const productsMap = new Map(existingProducts.map((p: any) => [p.id, p]));
-
     // Fetch full product details including prices
     const productsWithPrices = await prisma.product.findMany({
       where: {
@@ -126,21 +123,22 @@ export async function POST(request: NextRequest) {
 
       if (!product.available) {
         return NextResponse.json(
-          { error: `Product \"${product.name}\" is no longer available` },
+          { error: `Product "${product.name}" is no longer available` },
           { status: 400 },
         );
       }
 
-      // Use DATABASE price, not client-provided price
-      const itemSubtotal = product.price * item.quantity;
+      // ✅ Convert database price from pounds to pence
+      const priceInPence = Math.round(product.price * 100);
+      const itemSubtotal = priceInPence * item.quantity;
       calculatedSubtotal += itemSubtotal;
 
       validatedItems.push({
         productId: product.id,
         name: product.name,
         quantity: item.quantity,
-        price: product.price, // Database price, integer pence
-        subtotal: itemSubtotal, // integer pence
+        price: priceInPence, // Store as pence
+        subtotal: itemSubtotal,
       });
     }
 
@@ -153,7 +151,7 @@ export async function POST(request: NextRequest) {
 
     const calculatedTotal = calculatedSubtotal + calculatedDeliveryFee;
 
-    // Validate client-provided totals match server calculations (no floating point rounding needed)
+    // Validate client-provided totals match server calculations
     if (
       calculatedSubtotal !== subtotal ||
       calculatedDeliveryFee !== deliveryFee ||

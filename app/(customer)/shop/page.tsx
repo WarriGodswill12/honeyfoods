@@ -83,7 +83,7 @@ function ShopPageContent() {
 
     if (searchQuery) {
       filtered = filtered.filter((p) =>
-        p.name.toLowerCase().includes(searchQuery.toLowerCase())
+        p.name.toLowerCase().includes(searchQuery.toLowerCase()),
       );
     }
 
