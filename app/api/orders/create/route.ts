@@ -128,17 +128,17 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // ✅ Convert database price from pounds to pence (ensure integer)
-      const priceInPence = Math.round(product.price * 100);
-      const itemSubtotal = Math.round(priceInPence * item.quantity);
+      // Price is already in pence in database, no conversion needed
+      const priceInPence = product.price;
+      const itemSubtotal = priceInPence * item.quantity;
       calculatedSubtotal += itemSubtotal;
 
       validatedItems.push({
         productId: product.id,
         name: product.name,
         quantity: item.quantity,
-        price: Math.round(priceInPence), // Ensure integer
-        subtotal: Math.round(itemSubtotal), // Ensure integer
+        price: priceInPence,
+        subtotal: itemSubtotal,
       });
     }
 
@@ -147,9 +147,9 @@ export async function POST(request: NextRequest) {
     const calculatedDeliveryFee =
       calculatedSubtotal >= (settings?.freeDeliveryThreshold || 5000)
         ? 0
-        : settings?.deliveryFee || 1500;
+        : (settings?.deliveryFee || 1500) | 0;
 
-    const calculatedTotal = calculatedSubtotal + calculatedDeliveryFee;
+    const calculatedTotal = (calculatedSubtotal + calculatedDeliveryFee) | 0;
 
     // Validate client-provided totals match server calculations
     if (
@@ -184,9 +184,9 @@ export async function POST(request: NextRequest) {
         customerPhone: sanitizedInfo.phone,
         deliveryAddress: `${sanitizedInfo.address}, ${sanitizedInfo.city}, ${sanitizedInfo.postcode}`,
         customNote: sanitizedInfo.deliveryNotes,
-        subtotal: calculatedSubtotal, // integer pence
-        deliveryFee: calculatedDeliveryFee, // integer pence
-        total: calculatedTotal, // integer pence
+        subtotal: calculatedSubtotal | 0, // Force integer
+        deliveryFee: calculatedDeliveryFee | 0, // Force integer
+        total: calculatedTotal | 0, // Force integer
         status: "PENDING",
         paymentStatus: "PENDING",
         orderItems: {

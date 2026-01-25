@@ -94,7 +94,7 @@ function ShopPageContent() {
     addItem({
       productId: product.id,
       name: product.name,
-      price: product.price,
+      price: product.price / 100,
       imageUrl: product.image,
     });
   };
@@ -271,7 +271,7 @@ function ShopPageContent() {
                   <div className="flex items-center justify-between gap-2">
                     <Link href={`/shop/${slugify(product.name)}`}>
                       <p className="font-heading text-lg sm:text-xl lg:text-2xl font-bold text-honey-gold cursor-pointer hover:text-warm-orange transition-colors">
-                        {formatPrice(product.price)}
+                        {formatPrice(product.price / 100)}
                       </p>
                     </Link>
                     <Button
