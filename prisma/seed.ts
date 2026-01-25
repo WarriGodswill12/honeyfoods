@@ -176,7 +176,7 @@ async function main() {
       name: "Mini Meat Pie",
       slug: "mini-meat-pie",
       description: "£1.50 each - Minimum order 8 pieces",
-      price: 1.500,
+      price: 150,
       image:
         "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400&h=400&fit=crop",
       available: true,
@@ -187,7 +187,7 @@ async function main() {
       name: "Mini Chicken Pie",
       slug: "mini-chicken-pie",
       description: "£1.50 each - Minimum order 8 pieces",
-      price: 1.500,
+      price: 150,
       image:
         "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400&h=400&fit=crop",
       available: true,
@@ -200,7 +200,7 @@ async function main() {
       name: "Puff Puff - Single",
       slug: "puff-puff-single",
       description: "£0.50 each",
-      price: 0.500,
+      price: 50,
       image:
         "https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=400&h=400&fit=crop",
       available: true,
