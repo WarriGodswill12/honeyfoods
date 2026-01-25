@@ -128,17 +128,17 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // ✅ Convert database price from pounds to pence
+      // ✅ Convert database price from pounds to pence (ensure integer)
       const priceInPence = Math.round(product.price * 100);
-      const itemSubtotal = priceInPence * item.quantity;
+      const itemSubtotal = Math.round(priceInPence * item.quantity);
       calculatedSubtotal += itemSubtotal;
 
       validatedItems.push({
         productId: product.id,
         name: product.name,
         quantity: item.quantity,
-        price: priceInPence, // Store as pence
-        subtotal: itemSubtotal,
+        price: Math.round(priceInPence), // Ensure integer
+        subtotal: Math.round(itemSubtotal), // Ensure integer
       });
     }
 
@@ -209,7 +209,16 @@ export async function POST(request: NextRequest) {
     });
   } catch (error: any) {
     console.error("Error creating order:", error);
-    // Don't expose internal error details
+    console.error("Error stack:", error.stack);
+    console.error("Error message:", error.message);
+    console.error("Error name:", error.name);
+
+    // In production, also log to help debug
+    if (process.env.NODE_ENV === "production") {
+      console.error("Full error object:", JSON.stringify(error, null, 2));
+    }
+
+    // Don't expose internal error details to client
     return NextResponse.json(
       { error: "Failed to create order. Please try again." },
       {
