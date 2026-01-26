@@ -2,10 +2,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { StripeProvider } from "@/services/payment/stripe-provider";
 import { convexClient, api } from "@/lib/convex-server";
+import { rateLimit } from "@/lib/security";
 import { Id } from "@/convex/_generated/dataModel";
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limit: 30 requests per 10 minutes per IP (webhooks can be bursty)
+    const ip = request.headers.get("x-forwarded-for") || "unknown";
+    const key = `webhook:${ip}`;
+    if (!rateLimit({ key, limit: 30, windowMs: 10 * 60 * 1000 })) {
+      return NextResponse.json(
+        { error: "Too many requests. Please try again later." },
+        { status: 429 },
+      );
+    }
+
     const body = await request.text();
     const signature = request.headers.get("stripe-signature");
 

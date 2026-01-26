@@ -2,15 +2,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import { StripeProvider } from "@/services/payment/stripe-provider";
 import { convexClient, api } from "@/lib/convex-server";
+import { rateLimit } from "@/lib/security";
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limit: 10 requests per 10 minutes per IP
+    const ip = request.headers.get("x-forwarded-for") || "unknown";
+    const key = `verify-payment:${ip}`;
+    if (!rateLimit({ key, limit: 10, windowMs: 10 * 60 * 1000 })) {
+      return NextResponse.json(
+        { error: "Too many requests. Please try again later." },
+        { status: 429 },
+      );
+    }
+
     const body = await request.json();
     const { paymentIntentId } = body;
 
-    if (!paymentIntentId) {
+    if (!paymentIntentId || typeof paymentIntentId !== "string") {
       return NextResponse.json(
-        { error: "Missing payment intent ID" },
+        { error: "Missing or invalid payment intent ID" },
         { status: 400 },
       );
     }

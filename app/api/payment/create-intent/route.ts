@@ -2,10 +2,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { StripeProvider } from "@/services/payment/stripe-provider";
 import { convexClient, api } from "@/lib/convex-server";
+import { rateLimit, isValidEmail } from "@/lib/security";
 import { Id } from "@/convex/_generated/dataModel";
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limit: 10 requests per 10 minutes per IP
+    const ip = request.headers.get("x-forwarded-for") || "unknown";
+    const key = `create-payment-intent:${ip}`;
+    if (!rateLimit({ key, limit: 10, windowMs: 10 * 60 * 1000 })) {
+      return NextResponse.json(
+        { error: "Too many requests. Please try again later." },
+        { status: 429 },
+      );
+    }
+
     const body = await request.json();
     const { orderId, customerEmail } = body;
 
@@ -14,18 +25,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid order ID" }, { status: 400 });
     }
 
-    if (!customerEmail || typeof customerEmail !== "string") {
+    if (
+      !customerEmail ||
+      typeof customerEmail !== "string" ||
+      !isValidEmail(customerEmail)
+    ) {
       return NextResponse.json(
         { error: "Invalid customer email" },
-        { status: 400 },
-      );
-    }
-
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(customerEmail)) {
-      return NextResponse.json(
-        { error: "Invalid email format" },
         { status: 400 },
       );
     }

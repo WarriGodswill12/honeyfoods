@@ -2,9 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuthActions } from "@convex-dev/auth/react";
-import { useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api";
+import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
@@ -12,7 +10,6 @@ import Image from "next/image";
 
 export default function AdminRegisterPage() {
   const router = useRouter();
-  const { signIn } = useAuthActions();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -28,14 +25,39 @@ export default function AdminRegisterPage() {
     setIsLoading(true);
 
     try {
-      // Register using Convex Auth (which creates account automatically)
+      // First create the admin user via API
       setSuccess("Creating account...");
 
-      await signIn("password", {
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          password,
+          name,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || "Registration failed");
+      }
+
+      // Now sign in the newly created user
+      const signInResult = await signIn("credentials", {
         email,
         password,
-        flow: "signUp",
+        redirect: false,
       });
+
+      if (signInResult?.error) {
+        throw new Error(
+          "Account created but login failed. Please try logging in.",
+        );
+      }
 
       setSuccess("Registration successful! Redirecting...");
 
