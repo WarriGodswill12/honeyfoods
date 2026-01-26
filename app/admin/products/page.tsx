@@ -1,6 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { useQuery, useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import type { Id } from "@/convex/_generated/dataModel";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -38,23 +41,36 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import Image from "next/image";
-import type { Product } from "@/types/product";
 
 export default function ProductsPage() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const allProducts = useQuery(api.products.getProducts, {});
+  const createProduct = useMutation(api.products.createProduct);
+  const updateProduct = useMutation(api.products.updateProduct);
+  const deleteProduct = useMutation(api.products.deleteProduct);
+  const deleteAllProducts = useMutation(api.products.deleteAllProducts);
+
   const [searchQuery, setSearchQuery] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [editingProduct, setEditingProduct] = useState<any | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [isClearDialogOpen, setIsClearDialogOpen] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+  const [productToDelete, setProductToDelete] = useState<any | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+
+  // Get products and filter them
+  const products = allProducts || [];
+  const filteredProducts = useMemo(() => {
+    if (!searchQuery) return products;
+    return products.filter(
+      (product) =>
+        product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        product.category?.toLowerCase().includes(searchQuery.toLowerCase()),
+    );
+  }, [products, searchQuery]);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -65,7 +81,6 @@ export default function ProductsPage() {
     image: "",
     featured: false,
     available: true,
-    sizes: "" as string,
   });
 
   // Check if form is valid for submission
@@ -80,37 +95,6 @@ export default function ProductsPage() {
     return hasRequiredFields && !isUploadingImage;
   };
 
-  // Fetch products
-  const fetchProducts = async () => {
-    try {
-      setIsLoading(true);
-      const response = await fetch("/api/products");
-      if (!response.ok) throw new Error("Failed to fetch products");
-      const data = await response.json();
-      setProducts(data);
-      setFilteredProducts(data);
-    } catch (error) {
-      console.error("Error:", error);
-      setError("Failed to load products");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchProducts();
-  }, []);
-
-  // Search filter
-  useEffect(() => {
-    const filtered = products.filter(
-      (product) =>
-        product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.category.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-    setFilteredProducts(filtered);
-  }, [searchQuery, products]);
-
   const openAddModal = () => {
     setEditingProduct(null);
     setFormData({
@@ -121,23 +105,21 @@ export default function ProductsPage() {
       image: "",
       featured: false,
       available: true,
-      sizes: "",
     });
     setError("");
     setIsModalOpen(true);
   };
 
-  const openEditModal = (product: Product) => {
+  const openEditModal = (product: any) => {
     setEditingProduct(product);
     setFormData({
       name: product.name,
       description: product.description,
-      price: product.price.toString(),
+      price: product.price.toString(), // Already in pounds
       category: product.category,
       image: product.image,
       featured: product.featured,
       available: product.available,
-      sizes: "",
     });
     setError("");
     setIsModalOpen(true);
@@ -149,25 +131,30 @@ export default function ProductsPage() {
     setError("");
 
     try {
-      const url = editingProduct
-        ? `/api/products/${editingProduct.id}`
-        : "/api/products";
+      const productData = {
+        name: formData.name.trim(),
+        slug: formData.name
+          .toLowerCase()
+          .replace(/\s+/g, "-")
+          .replace(/[^a-z0-9-]/g, ""),
+        description: formData.description.trim() || undefined,
+        price: parseFloat(formData.price), // Store directly in pounds
+        category: formData.category.trim(),
+        image: formData.image.trim(),
+        featured: formData.featured,
+        available: formData.available,
+      };
 
-      const method = editingProduct ? "PUT" : "POST";
-
-      const response = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to save product");
+      if (editingProduct) {
+        await updateProduct({
+          id: editingProduct._id as Id<"products">,
+          ...productData,
+        });
+      } else {
+        await createProduct(productData);
       }
 
       setIsModalOpen(false);
-      fetchProducts();
     } catch (error: any) {
       setError(error.message);
     } finally {
@@ -175,7 +162,7 @@ export default function ProductsPage() {
     }
   };
 
-  const handleDelete = async (product: Product) => {
+  const handleDelete = async (product: any) => {
     setProductToDelete(product);
     setDeleteDialogOpen(true);
   };
@@ -186,18 +173,9 @@ export default function ProductsPage() {
     setIsDeleting(true);
 
     try {
-      const response = await fetch(`/api/products/${productToDelete.id}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to delete product");
-      }
-
+      await deleteProduct({ id: productToDelete._id as Id<"products"> });
       setDeleteDialogOpen(false);
       setProductToDelete(null);
-      fetchProducts();
     } catch (error: any) {
       alert(error.message);
     } finally {
@@ -209,27 +187,16 @@ export default function ProductsPage() {
     setIsClearing(true);
 
     try {
-      const response = await fetch("/api/products/clear", {
-        method: "DELETE",
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to clear products");
-      }
-
+      await deleteAllProducts();
       setIsClearDialogOpen(false);
-      fetchProducts();
-      alert(data.message);
     } catch (error: any) {
-      alert(error.message);
+      alert(error.message || "Failed to clear products");
     } finally {
       setIsClearing(false);
     }
   };
 
-  if (isLoading) {
+  if (products === undefined) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <LoadingSpinner />
@@ -324,7 +291,11 @@ export default function ProductsPage() {
         </div>
       </div>
       {/* Products Grid */}
-      {filteredProducts.length === 0 ? (
+      {allProducts === undefined ? (
+        <div className="flex justify-center items-center py-12">
+          <LoadingSpinner />
+        </div>
+      ) : filteredProducts.length === 0 ? (
         <Card className="p-12 text-center">
           <ImageIcon className="h-12 w-12 text-gray-300 mx-auto mb-4" />
           <h3 className="font-heading text-xl font-bold text-charcoal-black mb-2">
@@ -345,7 +316,7 @@ export default function ProductsPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredProducts.map((product) => (
-            <Card key={product.id} className="overflow-hidden">
+            <Card key={product._id} className="overflow-hidden">
               {/* Product Image */}
               <div className="relative h-48 bg-gray-100">
                 <Image
@@ -384,7 +355,7 @@ export default function ProductsPage() {
 
                 <div className="flex items-center justify-between pt-4 border-t border-gray-100">
                   <p className="font-heading text-2xl font-bold text-honey-gold">
-                    {formatPrice(product.price)}
+                    £{product.price.toFixed(2)}
                   </p>
                   <div className="flex gap-2">
                     <Button
@@ -468,22 +439,6 @@ export default function ProductsPage() {
               required
               disabled={isSubmitting}
             />
-          </div>
-
-          <div>
-            <Input
-              label="Sizes/Variants (Optional)"
-              placeholder="e.g. 1L, 2L, 5L or Small, Medium, Large or 6 Inch, 8 Inch, 10 Inch"
-              value={formData.sizes}
-              onChange={(e) =>
-                setFormData({ ...formData, sizes: e.target.value })
-              }
-              disabled={isSubmitting}
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Separate multiple sizes with commas. Leave empty if product has no
-              size variations.
-            </p>
           </div>
 
           <div>
@@ -611,10 +566,10 @@ export default function ProductsPage() {
                   ? "Updating..."
                   : "Adding..."
                 : isUploadingImage
-                ? "Uploading image..."
-                : editingProduct
-                ? "Update Product"
-                : "Add Product"}
+                  ? "Uploading image..."
+                  : editingProduct
+                    ? "Update Product"
+                    : "Add Product"}
             </Button>
           </div>
         </form>

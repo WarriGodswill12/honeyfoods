@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -41,83 +43,53 @@ import {
   Home,
 } from "lucide-react";
 import { FadeIn, SlideInUp } from "@/components/shared/animated";
-import type { Product } from "@/types/product";
 
 export default function ProductDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { addItem } = useCart();
-  const [product, setProduct] = useState<Product | null>(null);
-  const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
-  const [sizeVariations, setSizeVariations] = useState<Product[]>([]);
-  const [allProducts, setAllProducts] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const allProducts = useQuery(api.products.getProducts, { available: true });
   const [quantity, setQuantity] = useState(1);
   const [customNote, setCustomNote] = useState("");
   const [isAddingToCart, setIsAddingToCart] = useState(false);
 
+  // Get available products
+  const products = useMemo(() => {
+    if (!allProducts) return [];
+    return allProducts.filter((p) => p.available);
+  }, [allProducts]);
+
+  // Find current product by slug
+  const product = useMemo(() => {
+    return products.find((p) => slugify(p.name) === params.slug) || null;
+  }, [products, params.slug]);
+
+  // Get related products (same category, exclude current)
+  const relatedProducts = useMemo(() => {
+    if (!product) return [];
+    return products
+      .filter((p) => p.category === product.category && p._id !== product._id)
+      .slice(0, 4);
+  }, [products, product]);
+
+  // Get size variations (similar name pattern)
+  const sizeVariations = useMemo(() => {
+    if (!product) return [];
+    const baseName = product.name
+      .replace(/\s*(small|medium|large|mini|regular|jumbo)\s*/gi, "")
+      .trim();
+    return products.filter(
+      (p) =>
+        p._id !== product._id &&
+        p.name.toLowerCase().includes(baseName.toLowerCase()),
+    );
+  }, [products, product]);
+
   useEffect(() => {
-    fetchProduct();
-  }, [params.slug]);
-
-  const fetchProduct = async () => {
-    try {
-      setIsLoading(true);
-      // Fetch all products
-      const response = await fetch("/api/products?available=true");
-      if (!response.ok) throw new Error("Failed to fetch products");
-      const products = await response.json();
-
-      // Find product by slug
-      const foundProduct = products.find(
-        (p: Product) => slugify(p.name) === params.slug,
-      );
-
-      if (!foundProduct) {
-        router.push("/shop");
-        return;
-      }
-
-      setProduct(foundProduct);
-      setAllProducts(products);
-
-      // Extract base name (remove size info)
-      const getBaseName = (name: string) => {
-        return name
-          .replace(/\s*-\s*(1|2)\s*Litre.*$/i, "")
-          .replace(/\s*-\s*(1|2)\s*L.*$/i, "")
-          .replace(/\s*\((Small|Medium|Large|Mini|Regular)\)$/i, "")
-          .replace(/\s*(Small|Medium|Large|Mini|Regular)$/i, "")
-          .replace(/\s*-\s*\d+\s*(?:inch|inches|").*$/i, "")
-          .replace(/\s*-\s*\d+\s*(?:Pieces?|pcs)$/i, "")
-          .trim();
-      };
-
-      const baseName = getBaseName(foundProduct.name);
-
-      // Find size variations (products with same base name)
-      const variations = products.filter(
-        (p: Product) => getBaseName(p.name) === baseName,
-      );
-      setSizeVariations(variations);
-
-      // Get related products (same category, excluding current and variations)
-      const variationIds = variations.map((v: Product) => v.id);
-      const related = products
-        .filter(
-          (p: Product) =>
-            p.category === foundProduct.category &&
-            !variationIds.includes(p.id),
-        )
-        .slice(0, 3);
-      setRelatedProducts(related);
-    } catch (error) {
-      console.error("Error:", error);
+    if (allProducts && !product) {
       router.push("/shop");
-    } finally {
-      setIsLoading(false);
     }
-  };
+  }, [allProducts, product, router]);
 
   const handleAddToCart = () => {
     if (!product) return;
@@ -125,9 +97,9 @@ export default function ProductDetailPage() {
 
     addItem(
       {
-        productId: product.id,
+        productId: product._id,
         name: product.name,
-        price: product.price,
+        price: product.price, // Now in pounds
         imageUrl: product.image,
         note: customNote || undefined,
       },
@@ -146,7 +118,7 @@ export default function ProductDetailPage() {
 
   const handleSizeChange = (productId: string) => {
     const selectedProduct = sizeVariations.find(
-      (p) => p.id.toString() === productId,
+      (p) => p._id.toString() === productId,
     );
     if (selectedProduct) {
       router.push(`/shop/${slugify(selectedProduct.name)}`);
@@ -172,7 +144,7 @@ export default function ProductDetailPage() {
 
   const productSize = product ? extractSize(product.name) : null;
 
-  if (isLoading) {
+  if (allProducts === undefined) {
     return (
       <div className="container mx-auto px-4 py-16 flex items-center justify-center min-h-[60vh]">
         <LoadingSpinner />
@@ -278,7 +250,7 @@ export default function ProductDetailPage() {
                 {product.name}
               </h1>
               <p className="text-3xl sm:text-4xl font-bold text-honey-gold mb-6">
-                {formatPrice(product.price)}
+                £{product.price.toFixed(2)}
               </p>
             </div>
 
@@ -290,7 +262,7 @@ export default function ProductDetailPage() {
                   Select Size
                 </label>
                 <Select
-                  value={product.id.toString()}
+                  value={product._id.toString()}
                   onValueChange={handleSizeChange}
                 >
                   <SelectTrigger className="w-full">
@@ -301,11 +273,11 @@ export default function ProductDetailPage() {
                       const size = extractSize(variation.name);
                       return (
                         <SelectItem
-                          key={variation.id}
-                          value={variation.id.toString()}
+                          key={variation._id}
+                          value={variation._id.toString()}
                         >
-                          {size || variation.name} -{" "}
-                          {formatPrice(variation.price * 100)}
+                          {size || variation.name} - £
+                          {variation.price.toFixed(2)}
                         </SelectItem>
                       );
                     })}
@@ -365,7 +337,7 @@ export default function ProductDetailPage() {
                   <span>
                     Price per unit:{" "}
                     <strong className="text-charcoal-black">
-                      {formatPrice(product.price * 100)}
+                      £{product.price.toFixed(2)}
                     </strong>
                   </span>
                 </div>
@@ -430,8 +402,8 @@ export default function ProductDetailPage() {
                 ) : (
                   <>
                     <ShoppingCart className="h-5 w-5 mr-2" />
-                    Add {quantity} to Cart -{" "}
-                    {formatPrice(product.price * quantity * 100)}
+                    Add {quantity} to Cart - £
+                    {((product.price * quantity) / 100).toFixed(2)}
                   </>
                 )}
               </Button>
@@ -454,7 +426,7 @@ export default function ProductDetailPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
             {relatedProducts.map((relatedProduct, index) => (
-              <FadeIn key={relatedProduct.id} delay={index * 0.1}>
+              <FadeIn key={relatedProduct._id} delay={index * 0.1}>
                 <Link href={`/shop/${slugify(relatedProduct.name)}`}>
                   <div className="group bg-white rounded-xl sm:rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300">
                     <div className="relative aspect-square bg-gray-100">
@@ -479,7 +451,7 @@ export default function ProductDetailPage() {
                         {relatedProduct.name}
                       </h3>
                       <p className="text-lg sm:text-xl font-bold text-honey-gold">
-                        {formatPrice(relatedProduct.price * 100)}
+                        £{relatedProduct.price.toFixed(2)}
                       </p>
                     </div>
                   </div>

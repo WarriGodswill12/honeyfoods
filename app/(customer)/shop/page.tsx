@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
@@ -25,7 +27,6 @@ import { formatPrice, slugify } from "@/lib/utils";
 import { ShoppingCart, Search, Home } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import type { Product } from "@/types/product";
 import {
   FadeIn,
   SlideInUp,
@@ -34,9 +35,7 @@ import {
 
 function ShopPageContent() {
   const searchParams = useSearchParams();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const allProducts = useQuery(api.products.getProducts, { available: true });
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const { addItem } = useCart();
@@ -49,33 +48,23 @@ function ShopPageContent() {
     }
   }, [searchParams]);
 
-  useEffect(() => {
-    fetchProducts();
-  }, []);
-
-  const fetchProducts = async () => {
-    try {
-      const response = await fetch("/api/products?available=true");
-      if (!response.ok) throw new Error("Failed to fetch products");
-      const data = await response.json();
-      setProducts(data);
-      setFilteredProducts(data);
-    } catch (error) {
-      console.error("Error:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // Get available products
+  const products = useMemo(() => {
+    if (!allProducts) return [];
+    return allProducts.filter((p) => p.available);
+  }, [allProducts]);
 
   // Get unique categories
-  const categories = [
-    "all",
-    ...Array.from(new Set(products.map((p) => p.category).filter(Boolean))),
-  ];
+  const categories = useMemo(() => {
+    return [
+      "all",
+      ...Array.from(new Set(products.map((p) => p.category).filter(Boolean))),
+    ];
+  }, [products]);
 
   // Filter products
-  useEffect(() => {
-    let filtered = products;
+  const filteredProducts = useMemo(() => {
+    let filtered = [...products];
 
     if (selectedCategory !== "all") {
       filtered = filtered.filter((p) => p.category === selectedCategory);
@@ -87,19 +76,19 @@ function ShopPageContent() {
       );
     }
 
-    setFilteredProducts(filtered);
+    return filtered;
   }, [selectedCategory, searchQuery, products]);
 
-  const handleAddToCart = (product: Product) => {
+  const handleAddToCart = (product: any) => {
     addItem({
-      productId: product.id,
+      productId: product._id,
       name: product.name,
-      price: product.price / 100,
+      price: product.price, // Now in pounds
       imageUrl: product.image,
     });
   };
 
-  if (isLoading) {
+  if (allProducts === undefined) {
     return (
       <div className="container mx-auto px-4 py-16 flex items-center justify-center">
         <LoadingSpinner />
@@ -176,7 +165,10 @@ function ShopPageContent() {
               <SelectContent>
                 <SelectItem value="all">All Categories</SelectItem>
                 {categories
-                  .filter((cat) => cat !== "all")
+                  .filter(
+                    (cat): cat is string =>
+                      cat !== "all" && typeof cat === "string",
+                  )
                   .map((category) => (
                     <SelectItem key={category} value={category}>
                       {category}
@@ -227,7 +219,7 @@ function ShopPageContent() {
           <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filteredProducts.map((product) => (
               <div
-                key={product.id}
+                key={product._id}
                 className="group overflow-hidden rounded-2xl sm:rounded-3xl bg-white transition-all hover:shadow-lg shadow-sm"
               >
                 <Link href={`/shop/${slugify(product.name)}`} className="block">
@@ -264,14 +256,14 @@ function ShopPageContent() {
                       {product.name}
                     </h3>
                     <p className="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4 line-clamp-2">
-                      {product.description}
+                      {product.description || "Delicious homemade food"}
                     </p>
                   </Link>
 
                   <div className="flex items-center justify-between gap-2">
                     <Link href={`/shop/${slugify(product.name)}`}>
                       <p className="font-heading text-lg sm:text-xl lg:text-2xl font-bold text-honey-gold cursor-pointer hover:text-warm-orange transition-colors">
-                        {formatPrice(product.price / 100)}
+                        £{product.price.toFixed(2)}
                       </p>
                     </Link>
                     <Button

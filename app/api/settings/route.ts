@@ -1,19 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { convexClient, api } from "@/lib/convex-server";
 
 export async function GET() {
   try {
-    // Get or create settings (singleton pattern)
-    let settings = await prisma.settings.findFirst();
-
-    if (!settings) {
-      // Create default settings if none exist
-      settings = await prisma.settings.create({
-        data: {},
-      });
-    }
+    // Get settings
+    const settings = await convexClient.query(api.settings.getSettings);
 
     return NextResponse.json(settings);
   } catch (error) {
@@ -58,18 +51,13 @@ export async function PUT(request: NextRequest) {
     }
 
     // Get or create settings
-    let settings = await prisma.settings.findFirst();
+    const currentSettings = await convexClient.query(api.settings.getSettings);
 
-    if (!settings) {
-      settings = await prisma.settings.create({
-        data: body,
-      });
-    } else {
-      settings = await prisma.settings.update({
-        where: { id: settings.id },
-        data: body,
-      });
-    }
+    // Update settings
+    await convexClient.mutation(api.settings.updateSettings, body);
+
+    // Fetch updated settings
+    const settings = await convexClient.query(api.settings.getSettings);
 
     return NextResponse.json(settings);
   } catch (error) {

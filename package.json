@@ -9,6 +9,8 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@auth/core": "^0.37.4",
+    "@convex-dev/auth": "^0.0.90",
     "@hookform/resolvers": "^5.2.2",
     "@prisma/client": "^6.19.2",
     "@radix-ui/react-label": "^2.1.8",
@@ -20,6 +22,7 @@
     "class-variance-authority": "^0.7.1",
     "cloudinary": "^2.8.0",
     "clsx": "^2.1.1",
+    "convex": "*",
     "embla-carousel-react": "^8.6.0",
     "gsap": "^3.14.2",
     "lucide-react": "^0.561.0",

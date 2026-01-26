@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { convexClient, api } from "@/lib/convex-server";
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -8,11 +8,10 @@ import { sanitizeString, sanitizeUrl } from "@/lib/sanitize";
 export async function GET(req: NextRequest) {
   try {
     const searchParams = req.nextUrl.searchParams;
-    const type = searchParams.get("type");
+    const type = searchParams.get("type") as any;
 
-    const images = await prisma.galleryImage.findMany({
-      where: type ? { type } : {},
-      orderBy: { order: "asc" },
+    const images = await convexClient.query(api.gallery.getGalleryImages, {
+      type: type || undefined,
     });
 
     return NextResponse.json(images);
@@ -20,7 +19,7 @@ export async function GET(req: NextRequest) {
     console.error("Gallery GET error:", error);
     return NextResponse.json(
       { error: "Failed to fetch gallery images" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -33,7 +32,7 @@ export async function POST(req: NextRequest) {
     if (!session || session.user.role !== "ADMIN") {
       return NextResponse.json(
         { error: "Unauthorized. Admin access required." },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -43,7 +42,7 @@ export async function POST(req: NextRequest) {
     if (!url || !alt) {
       return NextResponse.json(
         { error: "URL and alt text are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -52,22 +51,23 @@ export async function POST(req: NextRequest) {
     const sanitizedAlt = sanitizeString(alt);
     const sanitizedType = sanitizeString(type);
 
-    const image = await prisma.galleryImage.create({
-      data: {
+    const imageId = await convexClient.mutation(
+      api.gallery.createGalleryImage,
+      {
         type: sanitizedType,
         url: sanitizedUrl,
         alt: sanitizedAlt,
         featured: Boolean(featured),
         order: order ?? 0,
       },
-    });
+    );
 
-    return NextResponse.json(image, { status: 201 });
+    return NextResponse.json({ _id: imageId }, { status: 201 });
   } catch (error) {
     console.error("Gallery POST error:", error);
     return NextResponse.json(
       { error: "Failed to create gallery image" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

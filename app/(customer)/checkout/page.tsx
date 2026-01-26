@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Elements } from "@stripe/react-stripe-js";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
 import { useCart } from "@/store/cart-store";
 import { formatPrice } from "@/lib/utils";
 import { getStripe } from "@/lib/stripe";
@@ -28,6 +30,7 @@ import { FadeIn, SlideInUp } from "@/components/shared/animated";
 export default function CheckoutPage() {
   const router = useRouter();
   const { items, getTotalPrice, clearCart } = useCart();
+  const settings = useQuery(api.settings.getSettings);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
@@ -45,32 +48,15 @@ export default function CheckoutPage() {
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [settings, setSettings] = useState<{
-    deliveryFee: number;
-    freeDeliveryThreshold: number;
-  } | null>(null);
 
+  // Cart total and settings are in pounds
   const subtotal = getTotalPrice();
-  // Convert settings from pence to pounds for calculations
+  const freeThreshold = settings?.freeDeliveryThreshold ?? Infinity;
   const deliveryFee =
-    settings && subtotal >= settings.freeDeliveryThreshold / 100
+    subtotal >= freeThreshold
       ? 0
-      : (settings?.deliveryFee || DEFAULT_DELIVERY_FEE) / 100;
+      : (settings?.deliveryFee ?? DEFAULT_DELIVERY_FEE);
   const total = subtotal + deliveryFee;
-
-  // Fetch settings
-  useEffect(() => {
-    fetch("/api/settings")
-      .then((res) => res.json())
-      .then((data) => {
-        // Convert settings from pence to pounds for display/calculation
-        setSettings({
-          deliveryFee: data.deliveryFee,
-          freeDeliveryThreshold: data.freeDeliveryThreshold,
-        });
-      })
-      .catch((err) => console.error("Error fetching settings:", err));
-  }, []);
 
   // Check if cart is empty
   useEffect(() => {
@@ -118,68 +104,65 @@ export default function CheckoutPage() {
     }
   };
 
-
-const handleProceedToPayment = async () => {
-  if (!validateForm()) {
-    return;
-  }
-
-  setIsProcessing(true);
-
-  try {
-    // Create order
-    const orderResponse = await fetch("/api/orders/create", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        customerInfo,
-        items: items.map((item) => ({
-          productId: item.productId,
-          name: item.name,
-          quantity: item.quantity,
-          price: Math.round(item.price * 100), // ✅ Convert pounds to pence (20 → 2000)
-        })),
-        subtotal: Math.round(subtotal * 100), // Convert to pence
-        deliveryFee: Math.round(deliveryFee * 100), // Convert to pence
-        total: Math.round(total * 100), // Convert to pence
-      }),
-    });
-
-    if (!orderResponse.ok) {
-      const errorData = await orderResponse.json();
-      console.error("Order creation failed:", errorData);
-      throw new Error(errorData.error || "Failed to create order");
+  const handleProceedToPayment = async () => {
+    if (!validateForm()) {
+      return;
     }
 
-    const orderData = await orderResponse.json();
-    setOrderId(orderData.orderId);
+    setIsProcessing(true);
 
-    // Create payment intent
-    const paymentResponse = await fetch("/api/payment/create-intent", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        orderId: orderData.orderId,
-        customerEmail: customerInfo.email,
-      }),
-    });
+    try {
+      // Create order
+      const orderResponse = await fetch("/api/orders/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customerInfo,
+          items: items.map((item) => ({
+            productId: item.productId,
+            name: item.name,
+            quantity: item.quantity,
+            price: item.price, // In pounds
+          })),
+          subtotal, // In pounds
+          deliveryFee, // In pounds
+          total, // Total in pounds
+        }),
+      });
 
-    if (!paymentResponse.ok) {
-      throw new Error("Failed to initialize payment");
+      if (!orderResponse.ok) {
+        const errorData = await orderResponse.json();
+        console.error("Order creation failed:", errorData);
+        throw new Error(errorData.error || "Failed to create order");
+      }
+
+      const orderData = await orderResponse.json();
+      setOrderId(orderData.orderId);
+
+      // Create payment intent
+      const paymentResponse = await fetch("/api/payment/create-intent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId: orderData.orderId,
+          customerEmail: customerInfo.email,
+        }),
+      });
+
+      if (!paymentResponse.ok) {
+        throw new Error("Failed to initialize payment");
+      }
+
+      const paymentData = await paymentResponse.json();
+      setClientSecret(paymentData.clientSecret);
+      setShowPayment(true);
+    } catch (error: any) {
+      console.error("Error:", error);
+      alert(error.message || "Failed to process order");
+    } finally {
+      setIsProcessing(false);
     }
-
-    const paymentData = await paymentResponse.json();
-    setClientSecret(paymentData.clientSecret);
-    setShowPayment(true);
-  } catch (error: any) {
-    console.error("Error:", error);
-    alert(error.message || "Failed to process order");
-  } finally {
-    setIsProcessing(false);
-  }
-};
-
-
+  };
 
   const handlePaymentSuccess = (successOrderId: string) => {
     clearCart();
@@ -449,7 +432,7 @@ const handleProceedToPayment = async () => {
                         )}
                       </div>
                       <p className="text-sm font-bold text-honey-gold shrink-0">
-                        {formatPrice(item.price * item.quantity)}
+                        £{(item.price * item.quantity).toFixed(2)}
                       </p>
                     </div>
                   ))}

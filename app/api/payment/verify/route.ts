@@ -1,7 +1,7 @@
 // Verify Stripe payment
 import { NextRequest, NextResponse } from "next/server";
 import { StripeProvider } from "@/services/payment/stripe-provider";
-import { prisma } from "@/lib/prisma";
+import { convexClient, api } from "@/lib/convex-server";
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
     if (!paymentIntentId) {
       return NextResponse.json(
         { error: "Missing payment intent ID" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -21,33 +21,41 @@ export async function POST(request: NextRequest) {
 
     if (verification.verified) {
       // Get payment record
-      const payment = await prisma.payment.findFirst({
-        where: { providerPaymentId: paymentIntentId },
-        include: { order: true },
-      });
+      const payment = await convexClient.query(
+        api.payments.getPaymentByStripeId,
+        { stripePaymentIntentId: paymentIntentId },
+      );
 
       if (!payment) {
         return NextResponse.json(
           { error: "Payment record not found" },
-          { status: 404 }
+          { status: 404 },
         );
       }
 
+      // Get order details
+      const order = await convexClient.query(api.orders.getOrderById, {
+        id: payment.orderId,
+      });
+
+      if (!order) {
+        return NextResponse.json({ error: "Order not found" }, { status: 404 });
+      }
+
       // Update order and payment status
-      await prisma.$transaction([
-        prisma.order.update({
-          where: { id: payment.orderId },
-          data: {
-            paymentStatus: "PAID",
-            status: "CONFIRMED",
-          },
+      await Promise.all([
+        convexClient.mutation(api.orders.updatePaymentStatus, {
+          id: payment.orderId,
+          paymentStatus: "PAID",
         }),
-        prisma.payment.update({
-          where: { id: payment.id },
-          data: {
-            status: "PAID",
-            providerPaymentId: verification.transactionId!,
-          },
+        convexClient.mutation(api.orders.updateOrderStatus, {
+          id: payment.orderId,
+          status: "CONFIRMED",
+        }),
+        convexClient.mutation(api.payments.updatePayment, {
+          id: payment._id,
+          status: "PAID",
+          stripePaymentIntentId: verification.transactionId!,
         }),
       ]);
 
@@ -55,7 +63,7 @@ export async function POST(request: NextRequest) {
         success: true,
         verified: true,
         orderId: payment.orderId,
-        orderNumber: payment.order.orderNumber,
+        orderNumber: order.orderNumber,
       });
     }
 
@@ -76,7 +84,7 @@ export async function POST(request: NextRequest) {
           "X-Frame-Options": "DENY",
           "X-XSS-Protection": "1; mode=block",
         },
-      }
+      },
     );
   }
 }

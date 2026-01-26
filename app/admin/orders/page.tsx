@@ -1,10 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { formatPrice, formatDate } from "@/lib/utils";
 import {
   ShoppingBag,
@@ -14,74 +17,22 @@ import {
   Loader2,
 } from "lucide-react";
 
-interface OrderItem {
-  id: string;
-  name: string;
-  quantity: number;
-  price: number;
-  product: {
-    name: string;
-    image: string;
-  };
-}
-
-interface Order {
-  id: string;
-  orderNumber: string;
-  customerName: string;
-  customerEmail: string | null;
-  customerPhone: string;
-  deliveryAddress: string;
-  customNote: string | null;
-  total: number;
-  status: string;
-  paymentStatus: string;
-  createdAt: string;
-  orderItems: OrderItem[];
-}
-
 export default function OrdersPage() {
   const router = useRouter();
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [stats, setStats] = useState({
-    totalOrders: 0,
-    pendingOrders: 0,
-    deliveredOrders: 0,
-  });
+  const allOrders = useQuery(api.orders.getOrders, {});
+  const orders = allOrders || [];
 
-  useEffect(() => {
-    fetchOrders();
-  }, []);
+  // Calculate stats
+  const stats = useMemo(() => {
+    const pending = orders.filter((o) => o.status === "PENDING").length;
+    const delivered = orders.filter((o) => o.status === "DELIVERED").length;
 
-  const fetchOrders = async () => {
-    try {
-      setIsLoading(true);
-      const response = await fetch("/api/orders");
-      if (response.ok) {
-        const data = await response.json();
-        setOrders(data.orders || []);
-
-        // Calculate stats
-        const pending = data.orders.filter(
-          (o: Order) => o.status === "PENDING"
-        ).length;
-        const delivered = data.orders.filter(
-          (o: Order) => o.status === "DELIVERED"
-        ).length;
-
-        setStats({
-          totalOrders: data.orders.length,
-          pendingOrders: pending,
-          deliveredOrders: delivered,
-        });
-      }
-    } catch (error) {
-      console.error("Error fetching orders:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    return {
+      totalOrders: orders.length,
+      pendingOrders: pending,
+      deliveredOrders: delivered,
+    };
+  }, [orders]);
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
@@ -169,9 +120,9 @@ export default function OrdersPage() {
 
       {/* Orders List */}
       <Card>
-        {isLoading ? (
+        {allOrders === undefined ? (
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-honey-gold" />
+            <LoadingSpinner />
           </div>
         ) : orders.length === 0 ? (
           <div className="text-center py-12">
@@ -206,8 +157,8 @@ export default function OrdersPage() {
               <tbody className="divide-y divide-gray-200">
                 {orders.map((order) => (
                   <tr
-                    key={order.id}
-                    onClick={() => router.push(`/admin/orders/${order.id}`)}
+                    key={order._id}
+                    onClick={() => router.push(`/admin/orders/${order._id}`)}
                     className="hover:bg-gray-50 transition-colors cursor-pointer"
                   >
                     <td className="px-6 py-4">
@@ -223,11 +174,9 @@ export default function OrdersPage() {
                         {order.customerEmail || order.customerPhone}
                       </p>
                     </td>
-                    <td className="px-6 py-4 text-gray-600">
-                      {order.orderItems.length}
-                    </td>
+                    <td className="px-6 py-4 text-gray-600">-</td>
                     <td className="px-6 py-4 font-medium text-charcoal-black">
-                      {formatPrice(order.total)}
+                      £{order.total.toFixed(2)}
                     </td>
                     <td className="px-6 py-4">
                       {getStatusBadge(order.status)}

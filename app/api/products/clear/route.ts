@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { convexClient, api } from "@/lib/convex-server";
 
 // DELETE /api/products/clear - Delete all products (Admin only)
 export async function DELETE(request: NextRequest) {
@@ -13,7 +13,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Check if any products have orders
-    const orderCount = await prisma.orderItem.count();
+    const orderCount = await convexClient.query(api.orderItems.countAll);
 
     if (orderCount > 0) {
       return NextResponse.json(
@@ -21,12 +21,12 @@ export async function DELETE(request: NextRequest) {
           error:
             "Cannot delete all products. Some products have existing orders.",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     // Delete all products
-    const result = await prisma.product.deleteMany({});
+    const result = await convexClient.mutation(api.products.deleteAllProducts);
 
     return NextResponse.json({
       message: `Successfully deleted ${result.count} products`,
@@ -36,7 +36,7 @@ export async function DELETE(request: NextRequest) {
     console.error("Error deleting all products:", error);
     return NextResponse.json(
       { error: "Failed to delete products" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

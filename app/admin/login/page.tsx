@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AlertCircle } from "lucide-react";
@@ -30,14 +30,12 @@ export default function AdminLoginPage() {
       if (result?.error) {
         setError("Invalid email or password");
         setIsLoading(false);
-      } else if (result?.ok) {
+      } else {
+        // Redirect to admin dashboard on success
         router.push("/admin/dashboard");
         router.refresh();
-      } else {
-        setError("An error occurred. Please try again.");
-        setIsLoading(false);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Login error:", error);
       setError("An error occurred. Please try again.");
       setIsLoading(false);

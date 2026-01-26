@@ -4,6 +4,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { siteConfig } from "@/config/site";
 import { CartProvider } from "@/store/cart-store";
+import { ConvexClientProvider } from "@/components/shared/convex-provider";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -115,7 +116,9 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${playfair.variable} ${montserrat.variable} ${poppins.variable} ${brunelis.variable} ${tryFat.variable} ${stay.variable} ${refind.variable} ${aveburg.variable} ${belarin.variable} ${blokna.variable} ${fedro.variable} ${regalorn.variable} antialiased`}
       >
-        <CartProvider>{children}</CartProvider>
+        <ConvexClientProvider>
+          <CartProvider>{children}</CartProvider>
+        </ConvexClientProvider>
       </body>
     </html>
   );

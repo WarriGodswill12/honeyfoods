@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { convexClient, api } from "@/lib/convex-server";
 
 export async function GET(request: NextRequest) {
   try {
@@ -10,73 +10,48 @@ export async function GET(request: NextRequest) {
     if (!session) {
       return NextResponse.json(
         { error: "Unauthorized. Admin access required." },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     const { searchParams } = new URL(request.url);
-    const status = searchParams.get("status");
+    const status = searchParams.get("status") as any;
     const limit = parseInt(searchParams.get("limit") || "100");
 
-    // Build where clause
-    const where: any = {};
-    if (status) {
-      where.status = status;
-    }
-
-    // Fetch orders with items
-    const orders = await prisma.order.findMany({
-      where,
-      include: {
-        orderItems: {
-          include: {
-            product: {
-              select: {
-                name: true,
-                image: true,
-              },
-            },
-          },
-        },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-      take: limit,
+    // Fetch orders
+    const orders = await convexClient.query(api.orders.getOrders, {
+      status: status || undefined,
+      limit,
     });
+
+    // Get order items for each order
+    const ordersWithItems = await Promise.all(
+      orders.map(async (order) => {
+        const items = await convexClient.query(api.orderItems.getOrderItems, {
+          orderId: order._id,
+        });
+        return { ...order, orderItems: items };
+      }),
+    );
 
     // Calculate statistics
-    const stats = await prisma.order.aggregate({
-      _count: {
-        id: true,
-      },
-      _sum: {
-        total: true,
-      },
-      where: {
-        paymentStatus: "PAID",
-      },
-    });
+    const stats = await convexClient.query(api.orders.getOrderStats);
 
-    const pendingCount = await prisma.order.count({
-      where: {
-        status: "PENDING",
-      },
-    });
+    const pendingOrders = orders.filter((o) => o.status === "PENDING");
 
     return NextResponse.json({
-      orders,
+      orders: ordersWithItems,
       stats: {
-        totalOrders: stats._count.id || 0,
-        totalRevenue: stats._sum.total || 0,
-        pendingOrders: pendingCount,
+        totalOrders: stats.totalOrders || 0,
+        totalRevenue: stats.totalRevenue || 0,
+        pendingOrders: pendingOrders.length,
       },
     });
   } catch (error) {
     console.error("Error fetching orders:", error);
     return NextResponse.json(
       { error: "Failed to fetch orders" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

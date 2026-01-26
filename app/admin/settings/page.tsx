@@ -1,29 +1,18 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useQuery, useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { Store, Truck, Save, AlertCircle } from "lucide-react";
-import { formatPrice } from "@/lib/utils";
-
-interface Settings {
-  id: string;
-  deliveryFee: number;
-  freeDeliveryThreshold: number;
-  minOrderAmount: number;
-  storeName: string;
-  storeTagline: string;
-  storeEmail: string;
-  storePhone: string;
-  storeAddress: string;
-  storeCity: string;
-  storePostalCode: string;
-}
 
 export default function SettingsPage() {
-  const [settings, setSettings] = useState<Settings | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const settings = useQuery(api.settings.getSettings);
+  const updateSettings = useMutation(api.settings.updateSettings);
+
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<{
     type: "success" | "error";
@@ -35,56 +24,36 @@ export default function SettingsPage() {
     minOrderAmount: 0,
   });
 
+  // Update form data when settings load
   useEffect(() => {
-    fetchSettings();
-  }, []);
-
-  const fetchSettings = async () => {
-    try {
-      const response = await fetch("/api/settings");
-      if (!response.ok) throw new Error("Failed to fetch settings");
-
-      const data = await response.json();
-      setSettings(data);
+    if (settings) {
       setFormData({
-        deliveryFee: data.deliveryFee / 100, // convert to pounds for display
-        freeDeliveryThreshold: data.freeDeliveryThreshold / 100, // convert to pounds for display
-        minOrderAmount: data.minOrderAmount / 100, // convert to pounds for display
+        deliveryFee: settings.deliveryFee || 0,
+        freeDeliveryThreshold: settings.freeDeliveryThreshold || 0,
+        minOrderAmount: (settings as any).minOrderAmount || 0,
       });
-    } catch (error) {
-      console.error("Error fetching settings:", error);
-      setMessage({ type: "error", text: "Failed to load settings" });
-    } finally {
-      setIsLoading(false);
     }
-  };
+  }, [settings]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
     setMessage(null);
 
-    // Convert pounds to pence before saving
+    // Save in pounds directly
     const payload = {
-      deliveryFee: Math.round(formData.deliveryFee * 100),
-      freeDeliveryThreshold: Math.round(formData.freeDeliveryThreshold * 100),
-      minOrderAmount: Math.round(formData.minOrderAmount * 100),
+      deliveryFee: formData.deliveryFee,
+      freeDeliveryThreshold: formData.freeDeliveryThreshold,
+      minOrderAmount: formData.minOrderAmount,
     };
 
     try {
-      const response = await fetch("/api/settings", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+      await updateSettings({
+        deliveryFee: payload.deliveryFee,
+        freeDeliveryThreshold: payload.freeDeliveryThreshold,
+        minOrderAmount: payload.minOrderAmount,
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to save settings");
-      }
-
-      const updated = await response.json();
-      setSettings(updated);
       setMessage({ type: "success", text: "Settings saved successfully!" });
 
       // Clear message after 3 seconds
@@ -107,10 +76,10 @@ export default function SettingsPage() {
     }));
   };
 
-  if (isLoading) {
+  if (settings === undefined) {
     return (
       <div className="p-8 flex items-center justify-center h-64">
-        <div className="text-gray-500">Loading settings...</div>
+        <LoadingSpinner />
       </div>
     );
   }
@@ -164,7 +133,7 @@ export default function SettingsPage() {
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Tagline
               </label>
-              <Input value={settings?.storeTagline || ""} disabled />
+              <Input value={(settings as any)?.storeTagline || ""} disabled />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -209,7 +178,7 @@ export default function SettingsPage() {
                 required
               />
               <p className="text-sm text-gray-500 mt-1">
-                Current: {formatPrice(formData.deliveryFee)}
+                Current: £{(formData.deliveryFee || 0).toFixed(2)}
               </p>
             </div>
 
@@ -229,8 +198,8 @@ export default function SettingsPage() {
                 required
               />
               <p className="text-sm text-gray-500 mt-1">
-                Orders over {formatPrice(formData.freeDeliveryThreshold)} get
-                free delivery
+                Orders over £{(formData.freeDeliveryThreshold || 0).toFixed(2)}{" "}
+                get free delivery
               </p>
             </div>
 
@@ -248,7 +217,8 @@ export default function SettingsPage() {
                 required
               />
               <p className="text-sm text-gray-500 mt-1">
-                Minimum order value: {formatPrice(formData.minOrderAmount)}
+                Minimum order value: £
+                {(formData.minOrderAmount || 0).toFixed(2)}
               </p>
             </div>
           </div>

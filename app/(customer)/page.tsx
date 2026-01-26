@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -18,12 +20,13 @@ import {
   Star,
 } from "lucide-react";
 import { FadeIn, StaggerChildren } from "@/components/shared/animated";
-import type { Product } from "@/types/product";
 
 // Hero Section with Background Image Slider
 function HeroSection() {
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [slides, setSlides] = useState([
+  const featuredGallery = useQuery(api.gallery.getFeaturedGalleryImages);
+
+  const defaultSlides = [
     {
       image:
         "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=1920&q=80",
@@ -44,33 +47,13 @@ function HeroSection() {
         "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=1920&q=80",
       alt: "Party Platter",
     },
-  ]);
+  ];
 
-  // Fetch featured gallery images on component mount
-  useEffect(() => {
-    const fetchFeaturedImages = async () => {
-      try {
-        const response = await fetch("/api/gallery/featured");
-        if (response.ok) {
-          const data = await response.json();
-          // Use featured images if available, otherwise use defaults
-          if (data.length > 0) {
-            setSlides(
-              data.map((img: any) => ({
-                image: img.url,
-                alt: img.alt,
-              }))
-            );
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching featured gallery images:", error);
-        // Silently fail and use default slides
-      }
-    };
-
-    fetchFeaturedImages();
-  }, []);
+  // Use featured images if available, otherwise use defaults
+  const slides =
+    featuredGallery && featuredGallery.length > 0
+      ? featuredGallery.map((img) => ({ image: img.url, alt: img.alt }))
+      : defaultSlides;
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -209,15 +192,13 @@ function CategoriesSection() {
 
 // Your Favourites (Featured Products)
 function FeaturedProducts() {
-  const [products, setProducts] = useState<Product[]>([]);
+  const allProducts = useQuery(api.products.getProducts, {});
   const { addItem } = useCart();
 
-  useEffect(() => {
-    fetch("/api/products?available=true")
-      .then((res) => res.json())
-      .then((data) => setProducts(data.slice(0, 6)))
-      .catch((err) => console.error("Error fetching products:", err));
-  }, []);
+  // Get available products, limit to 6
+  const products = allProducts
+    ? allProducts.filter((p) => p.available).slice(0, 6)
+    : [];
 
   if (products.length === 0) {
     return null;
@@ -237,7 +218,7 @@ function FeaturedProducts() {
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto"
         >
           {products.map((product) => (
-            <Link key={product.id} href={`/shop/${slugify(product.name)}`}>
+            <Link key={product._id} href={`/shop/${slugify(product.name)}`}>
               <div className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer">
                 <div className="relative aspect-square bg-gray-100">
                   <Image
@@ -258,11 +239,11 @@ function FeaturedProducts() {
                     {product.name}
                   </h3>
                   <p className="text-gray-600 text-xs sm:text-sm mb-3 sm:mb-4 line-clamp-2">
-                    {product.description}
+                    {product.description || "Delicious homemade food"}
                   </p>
                   <div className="flex items-center justify-between gap-2">
                     <p className="font-heading text-lg sm:text-xl lg:text-2xl font-bold text-honey-gold">
-                      {formatPrice(product.price)}
+                      £{product.price.toFixed(2)}
                     </p>
                     <Button
                       size="sm"
@@ -270,7 +251,7 @@ function FeaturedProducts() {
                         e.preventDefault();
                         e.stopPropagation();
                         addItem({
-                          productId: product.id,
+                          productId: product._id,
                           name: product.name,
                           price: product.price,
                           imageUrl: product.image,
@@ -369,7 +350,7 @@ function HowItWorks() {
 // Welcome to Honey Foods Section
 function AboutSection() {
   const [aboutImage, setAboutImage] = useState(
-    "https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=1200&q=80"
+    "https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=1200&q=80",
   );
 
   useEffect(() => {
@@ -481,7 +462,7 @@ function GallerySection() {
 
   const prevSlide = () => {
     setCurrentSlide(
-      (prev) => (prev - 1 + galleryImages.length) % galleryImages.length
+      (prev) => (prev - 1 + galleryImages.length) % galleryImages.length,
     );
   };
 

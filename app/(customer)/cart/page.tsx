@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { useCart } from "@/store/cart-store";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import {
   Breadcrumb,
@@ -19,32 +20,16 @@ import { DEFAULT_DELIVERY_FEE, FREE_DELIVERY_THRESHOLD } from "@/lib/constants";
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, getTotalPrice } = useCart();
-  const [settings, setSettings] = useState<{
-    deliveryFee: number;
-    freeDeliveryThreshold: number;
-  } | null>(null);
+  const settings = useQuery(api.settings.getSettings);
 
+  // Cart total and settings are in pounds
   const subtotal = getTotalPrice();
-  // Convert settings from pence to pounds for calculations
+  const freeThreshold = settings?.freeDeliveryThreshold ?? Infinity;
   const deliveryFee =
-    settings && subtotal >= settings.freeDeliveryThreshold / 100
+    subtotal >= freeThreshold
       ? 0
-      : (settings?.deliveryFee || DEFAULT_DELIVERY_FEE) / 100;
+      : (settings?.deliveryFee ?? DEFAULT_DELIVERY_FEE);
   const total = subtotal + deliveryFee;
-
-  // Fetch settings
-  useEffect(() => {
-    fetch("/api/settings")
-      .then((res) => res.json())
-      .then((data) => {
-        // Convert settings from pence to pounds for display/calculation
-        setSettings({
-          deliveryFee: data.deliveryFee,
-          freeDeliveryThreshold: data.freeDeliveryThreshold,
-        });
-      })
-      .catch((err) => console.error("Error fetching settings:", err));
-  }, []);
 
   if (items.length === 0) {
     return (
@@ -74,15 +59,29 @@ export default function CartPage() {
       {/* Breadcrumb */}
       <div className="mb-6">
         <Breadcrumb>
-          <BreadcrumbList>
+          <BreadcrumbList className="flex items-center">
             <BreadcrumbItem>
-              <BreadcrumbLink href="/">
+              <BreadcrumbLink
+                href="/"
+                className="flex items-center hover:text-honey-gold transition-colors"
+              >
                 <Home className="h-4 w-4" />
               </BreadcrumbLink>
             </BreadcrumbItem>
-            <BreadcrumbSeparator />
+            <BreadcrumbSeparator className="flex items-center" />
             <BreadcrumbItem>
-              <BreadcrumbPage className="font-semibold">Cart</BreadcrumbPage>
+              <BreadcrumbLink
+                href="/shop"
+                className="flex items-center hover:text-honey-gold transition-colors"
+              >
+                Shop
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator className="flex items-center" />
+            <BreadcrumbItem>
+              <BreadcrumbPage className="flex items-center font-semibold text-honey-gold">
+                Cart
+              </BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
@@ -118,7 +117,7 @@ export default function CartPage() {
                       {item.name}
                     </h3>
                     <p className="mt-1 text-base sm:text-lg font-bold text-warm-orange">
-                      {formatPrice(item.price)}
+                      £{item.price.toFixed(2)}
                     </p>
                   </div>
 
@@ -191,12 +190,13 @@ export default function CartPage() {
               </span>
             </div>
 
-            {subtotal < FREE_DELIVERY_THRESHOLD && (
-              <p className="mt-3 sm:mt-4 text-xs sm:text-sm text-gray-600 bg-green-50 p-3 rounded-lg">
-                Add {formatPrice(FREE_DELIVERY_THRESHOLD - subtotal)} more for
-                free delivery!
-              </p>
-            )}
+            {settings?.freeDeliveryThreshold !== undefined &&
+              subtotal < settings.freeDeliveryThreshold && (
+                <p className="mt-3 sm:mt-4 text-xs sm:text-sm text-gray-600 bg-green-50 p-3 rounded-lg">
+                  Add £{(settings.freeDeliveryThreshold - subtotal).toFixed(2)}{" "}
+                  more for free delivery!
+                </p>
+              )}
 
             <Link href="/checkout" className="mt-4 sm:mt-6 block">
               <Button size="lg" className="w-full active:scale-[0.98]">

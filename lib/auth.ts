@@ -2,7 +2,8 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
-import { prisma } from "@/lib/prisma";
+import { ConvexHttpClient } from "convex/browser";
+import { api } from "@/convex/_generated/api";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -20,17 +21,22 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Email and password are required");
         }
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
+        // Create Convex client for server-side auth
+        const convex = new ConvexHttpClient(
+          process.env.NEXT_PUBLIC_CONVEX_URL!,
+        );
+
+        const user = await convex.query(api.users.getUserByEmail, {
+          email: credentials.email,
         });
 
-        if (!user) {
+        if (!user || !user.passwordHash) {
           throw new Error("Invalid email or password");
         }
 
         const isValidPassword = await bcrypt.compare(
           credentials.password,
-          user.passwordHash
+          user.passwordHash,
         );
 
         if (!isValidPassword) {
@@ -38,7 +44,7 @@ export const authOptions: NextAuthOptions = {
         }
 
         return {
-          id: user.id,
+          id: user._id,
           email: user.email,
           name: user.name,
           role: user.role,

@@ -1,7 +1,8 @@
 // Stripe webhook handler
 import { NextRequest, NextResponse } from "next/server";
 import { StripeProvider } from "@/services/payment/stripe-provider";
-import { prisma } from "@/lib/prisma";
+import { convexClient, api } from "@/lib/convex-server";
+import { Id } from "@/convex/_generated/dataModel";
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,7 +20,7 @@ export async function POST(request: NextRequest) {
       console.error("STRIPE_WEBHOOK_SECRET not configured");
       return NextResponse.json(
         { error: "Server configuration error" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -27,21 +28,31 @@ export async function POST(request: NextRequest) {
     const stripeProvider = new StripeProvider();
     const result = await stripeProvider.handleWebhook(body, signature);
 
+    // Get payment record by Stripe ID
+    const payment = await convexClient.query(
+      api.payments.getPaymentByStripeId,
+      { stripePaymentIntentId: result.transactionId },
+    );
+
+    if (!payment) {
+      console.error("Payment not found for transaction:", result.transactionId);
+      return NextResponse.json({ received: true }); // Still return success to Stripe
+    }
+
     // Update order and payment status
-    await prisma.$transaction([
-      prisma.order.update({
-        where: { id: result.orderId },
-        data: {
-          paymentStatus: result.status === "PAID" ? "PAID" : "FAILED",
-          status: result.status === "PAID" ? "CONFIRMED" : "CANCELLED",
-        },
+    await Promise.all([
+      convexClient.mutation(api.orders.updatePaymentStatus, {
+        id: result.orderId as Id<"orders">,
+        paymentStatus: result.status === "PAID" ? "PAID" : "FAILED",
       }),
-      prisma.payment.updateMany({
-        where: { orderId: result.orderId },
-        data: {
-          status: result.status,
-          providerPaymentId: result.transactionId,
-        },
+      convexClient.mutation(api.orders.updateOrderStatus, {
+        id: result.orderId as Id<"orders">,
+        status: result.status === "PAID" ? "CONFIRMED" : "CANCELLED",
+      }),
+      convexClient.mutation(api.payments.updatePayment, {
+        id: payment._id,
+        status: result.status,
+        stripePaymentIntentId: result.transactionId,
       }),
     ]);
 
@@ -50,7 +61,7 @@ export async function POST(request: NextRequest) {
     console.error("Webhook error:", error);
     return NextResponse.json(
       { error: error.message || "Webhook handler failed" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 }

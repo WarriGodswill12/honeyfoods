@@ -1,25 +1,22 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { FadeIn, StaggerChildren } from "@/components/shared/animated";
 
-type GalleryImage = {
-  id: string;
-  type: "hero" | "gallery";
-  url: string;
-  alt: string;
-  order: number;
-};
-
 export default function GalleryPage() {
-  const [images, setImages] = useState<GalleryImage[]>([]);
-  const [selected, setSelected] = useState<GalleryImage | null>(null);
+  const allImages = useQuery(api.gallery.getGalleryImages, { type: "gallery" });
+  type GalleryImageType = NonNullable<typeof allImages>[number];
+  const [selected, setSelected] = useState<GalleryImageType | null>(null);
+
+  const images = allImages || [];
 
   // Find index of selected image
   const selectedIndex = selected
-    ? images.findIndex((img) => img.id === selected.id)
+    ? images.findIndex((img) => img._id === selected._id)
     : -1;
 
   // Carousel navigation handlers
@@ -46,21 +43,6 @@ export default function GalleryPage() {
     return () => window.removeEventListener("keydown", handleKey);
   }, [selected, selectedIndex, images]);
 
-  useEffect(() => {
-    const fetchGallery = async () => {
-      try {
-        const response = await fetch("/api/gallery?type=gallery");
-        if (response.ok) {
-          const data = await response.json();
-          setImages(data);
-        }
-      } catch (error) {
-        console.error("Error fetching gallery:", error);
-      }
-    };
-    fetchGallery();
-  }, []);
-
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-12 py-10 sm:py-14">
       <FadeIn className="text-center mb-8 sm:mb-12">
@@ -85,7 +67,7 @@ export default function GalleryPage() {
         ) : (
           images.map((img) => (
             <button
-              key={img.id}
+              key={img._id}
               className="group relative overflow-hidden rounded-2xl aspect-square shadow-sm hover:shadow-xl transition-all"
               onClick={() => setSelected(img)}
               aria-label={img.alt}

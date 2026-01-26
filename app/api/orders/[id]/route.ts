@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { convexClient, api } from "@/lib/convex-server";
+import { Id } from "@/convex/_generated/dataModel";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id: orderId } = await params;
@@ -13,48 +14,40 @@ export async function GET(
     if (!orderId) {
       return NextResponse.json(
         { error: "Order ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    // Fetch order with all related data
-    const order = await prisma.order.findUnique({
-      where: { id: orderId },
-      include: {
-        orderItems: {
-          include: {
-            product: {
-              select: {
-                name: true,
-                image: true,
-                price: true,
-              },
-            },
-          },
-        },
-      },
+    // Fetch order
+    const order = await convexClient.query(api.orders.getOrderById, {
+      id: orderId as Id<"orders">,
     });
 
     if (!order) {
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
     }
 
+    // Fetch order items
+    const orderItems = await convexClient.query(api.orderItems.getOrderItems, {
+      orderId: order._id,
+    });
+
     // Format response
     const response = {
-      id: order.id,
+      id: order._id,
       orderNumber: order.orderNumber,
       customerName: order.customerName,
       customerEmail: order.customerEmail,
       customerPhone: order.customerPhone,
       deliveryAddress: order.deliveryAddress,
       customNote: order.customNote,
-      orderItems: order.orderItems.map((item) => ({
-        id: item.id,
+      orderItems: orderItems.map((item) => ({
+        id: item._id,
         name: item.name,
         price: item.price,
         quantity: item.quantity,
         subtotal: item.subtotal,
-        image: item.product?.image || "",
+        image: "",
       })),
       subtotal: order.subtotal,
       deliveryFee: order.deliveryFee,
@@ -62,8 +55,8 @@ export async function GET(
       status: order.status,
       paymentStatus: order.paymentStatus,
       paymentMethod: order.paymentMethod,
-      createdAt: order.createdAt.toISOString(),
-      updatedAt: order.updatedAt.toISOString(),
+      createdAt: new Date(order.createdAt).toISOString(),
+      updatedAt: new Date(order.updatedAt).toISOString(),
     };
 
     return NextResponse.json(response);
@@ -71,14 +64,14 @@ export async function GET(
     console.error("Error fetching order:", error);
     return NextResponse.json(
       { error: "Failed to fetch order details" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     // Verify admin authentication
@@ -86,7 +79,7 @@ export async function PATCH(
     if (!session) {
       return NextResponse.json(
         { error: "Unauthorized. Admin access required." },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -97,14 +90,14 @@ export async function PATCH(
     if (!orderId) {
       return NextResponse.json(
         { error: "Order ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (!status) {
       return NextResponse.json(
         { error: "Status is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -123,40 +116,41 @@ export async function PATCH(
     }
 
     // Update order status
-    const updatedOrder = await prisma.order.update({
-      where: { id: orderId },
-      data: { status },
-      include: {
-        orderItems: {
-          include: {
-            product: {
-              select: {
-                name: true,
-                image: true,
-                price: true,
-              },
-            },
-          },
-        },
-      },
+    await convexClient.mutation(api.orders.updateOrderStatus, {
+      id: orderId as Id<"orders">,
+      status,
+    });
+
+    // Fetch updated order
+    const updatedOrder = await convexClient.query(api.orders.getOrderById, {
+      id: orderId as Id<"orders">,
+    });
+
+    if (!updatedOrder) {
+      return NextResponse.json({ error: "Order not found" }, { status: 404 });
+    }
+
+    // Fetch order items
+    const orderItems = await convexClient.query(api.orderItems.getOrderItems, {
+      orderId: updatedOrder._id,
     });
 
     // Format response
     const response = {
-      id: updatedOrder.id,
+      id: updatedOrder._id,
       orderNumber: updatedOrder.orderNumber,
       customerName: updatedOrder.customerName,
       customerEmail: updatedOrder.customerEmail,
       customerPhone: updatedOrder.customerPhone,
       deliveryAddress: updatedOrder.deliveryAddress,
       customNote: updatedOrder.customNote,
-      orderItems: updatedOrder.orderItems.map((item) => ({
-        id: item.id,
+      orderItems: orderItems.map((item) => ({
+        id: item._id,
         name: item.name,
         price: item.price,
         quantity: item.quantity,
         subtotal: item.subtotal,
-        image: item.product?.image || "",
+        image: "",
       })),
       subtotal: updatedOrder.subtotal,
       deliveryFee: updatedOrder.deliveryFee,
@@ -164,8 +158,8 @@ export async function PATCH(
       status: updatedOrder.status,
       paymentStatus: updatedOrder.paymentStatus,
       paymentMethod: updatedOrder.paymentMethod,
-      createdAt: updatedOrder.createdAt.toISOString(),
-      updatedAt: updatedOrder.updatedAt.toISOString(),
+      createdAt: new Date(updatedOrder.createdAt).toISOString(),
+      updatedAt: new Date(updatedOrder.updatedAt).toISOString(),
     };
 
     return NextResponse.json(response);
@@ -173,7 +167,7 @@ export async function PATCH(
     console.error("Error updating order:", error);
     return NextResponse.json(
       { error: "Failed to update order status" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

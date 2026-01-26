@@ -1,6 +1,6 @@
 // API route to create order and return order ID
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { convexClient, api } from "@/lib/convex-server";
 import { sanitizeString } from "@/lib/sanitize";
 
 export async function POST(request: NextRequest) {
@@ -59,22 +59,41 @@ export async function POST(request: NextRequest) {
 
     // Validate all product IDs exist in database
     const productIds = items.map((item: any) => item.productId);
-    const existingProducts = await prisma.product.findMany({
-      where: {
-        id: {
-          in: productIds,
-        },
-      },
-      select: {
-        id: true,
-      },
-    });
 
-    const existingProductIds = new Set(
-      existingProducts.map((p: { id: string }) => p.id),
+    // Filter out any undefined, null, or "undefined" string values
+    const validProductIds = productIds.filter(
+      (id: any) => id && id !== "undefined" && id !== "null",
     );
-    const invalidProductIds = productIds.filter(
-      (id: string) => !existingProductIds.has(id),
+
+    if (validProductIds.length === 0) {
+      console.error("No valid product IDs found in cart items:", items);
+      return NextResponse.json(
+        {
+          error: "Invalid cart items. Please refresh your cart and try again.",
+          debug: items.map((item: any) => ({
+            productId: item.productId,
+            name: item.name,
+          })),
+        },
+        { status: 400 },
+      );
+    }
+
+    if (validProductIds.length !== productIds.length) {
+      console.warn(
+        "Some invalid product IDs filtered out:",
+        productIds.filter((id: any) => !validProductIds.includes(id)),
+      );
+    }
+
+    const existingProducts = await convexClient.query(
+      api.products.getProductsByIds,
+      { ids: validProductIds },
+    );
+
+    const existingProductIds = new Set(existingProducts.map((p) => p._id));
+    const invalidProductIds = validProductIds.filter(
+      (id: any) => !existingProductIds.has(id),
     );
 
     if (invalidProductIds.length > 0) {
@@ -90,29 +109,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Fetch full product details including prices
-    const productsWithPrices = await prisma.product.findMany({
-      where: {
-        id: {
-          in: productIds,
-        },
-      },
-      select: {
-        id: true,
-        name: true,
-        price: true,
-        available: true,
-      },
-    });
+    const productsWithPrices = existingProducts;
 
     // Recalculate subtotal from actual database prices
     let calculatedSubtotal = 0;
     const validatedItems = [];
 
     for (const item of items) {
-      const product = productsWithPrices.find(
-        (p: { id: string; name: string; price: number; available: boolean }) =>
-          p.id === item.productId,
-      );
+      const product = productsWithPrices.find((p) => p._id === item.productId);
 
       if (!product) {
         return NextResponse.json(
@@ -128,28 +132,28 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Price is already in pence in database, no conversion needed
-      const priceInPence = product.price;
-      const itemSubtotal = priceInPence * item.quantity;
+      // Price is now in pounds in database
+      const priceInPounds = product.price;
+      const itemSubtotal = priceInPounds * item.quantity;
       calculatedSubtotal += itemSubtotal;
 
       validatedItems.push({
-        productId: product.id,
+        productId: product._id,
         name: product.name,
         quantity: item.quantity,
-        price: priceInPence,
+        price: priceInPounds,
         subtotal: itemSubtotal,
       });
     }
 
     // Fetch delivery fee from settings
-    const settings = await prisma.settings.findFirst();
+    const settings = await convexClient.query(api.settings.getSettings, {});
     const calculatedDeliveryFee =
-      calculatedSubtotal >= (settings?.freeDeliveryThreshold || 5000)
+      calculatedSubtotal >= (settings?.freeDeliveryThreshold || 100)
         ? 0
-        : (settings?.deliveryFee || 1500) | 0;
+        : settings?.deliveryFee || 50;
 
-    const calculatedTotal = (calculatedSubtotal + calculatedDeliveryFee) | 0;
+    const calculatedTotal = calculatedSubtotal + calculatedDeliveryFee;
 
     // Validate client-provided totals match server calculations
     if (
@@ -176,36 +180,23 @@ export async function POST(request: NextRequest) {
     }
 
     // Create order with server-validated data
-    const order = await prisma.order.create({
-      data: {
-        orderNumber,
-        customerName: sanitizedInfo.fullName,
-        customerEmail: sanitizedInfo.email,
-        customerPhone: sanitizedInfo.phone,
-        deliveryAddress: `${sanitizedInfo.address}, ${sanitizedInfo.city}, ${sanitizedInfo.postcode}`,
-        customNote: sanitizedInfo.deliveryNotes,
-        subtotal: calculatedSubtotal | 0, // Force integer
-        deliveryFee: calculatedDeliveryFee | 0, // Force integer
-        total: calculatedTotal | 0, // Force integer
-        status: "PENDING",
-        paymentStatus: "PENDING",
-        orderItems: {
-          create: validatedItems,
-        },
-      },
-      include: {
-        orderItems: {
-          include: {
-            product: true,
-          },
-        },
-      },
+    const orderId = await convexClient.mutation(api.orders.createOrder, {
+      orderNumber,
+      customerName: sanitizedInfo.fullName,
+      customerEmail: sanitizedInfo.email,
+      customerPhone: sanitizedInfo.phone,
+      deliveryAddress: `${sanitizedInfo.address}, ${sanitizedInfo.city}, ${sanitizedInfo.postcode}`,
+      customNote: sanitizedInfo.deliveryNotes || undefined,
+      subtotal: calculatedSubtotal,
+      deliveryFee: calculatedDeliveryFee,
+      total: calculatedTotal,
+      items: validatedItems,
     });
 
     return NextResponse.json({
       success: true,
-      orderId: order.id,
-      orderNumber: order.orderNumber,
+      orderId,
+      orderNumber,
     });
   } catch (error: any) {
     console.error("Error creating order:", error);

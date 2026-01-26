@@ -56,11 +56,11 @@ export const ALLOWED_IMAGE_TYPES = [
 
 // Cart constants
 export const MAX_QUANTITY_PER_ITEM = 99;
-export const MIN_ORDER_AMOUNT = 500; // Minimum order of ₦500
+export const MIN_ORDER_AMOUNT = 5; // Minimum order of £5.00
 
 // Delivery constants
-export const DEFAULT_DELIVERY_FEE = 1500; // ₦1,500
-export const FREE_DELIVERY_THRESHOLD = 10000; // Free delivery over ₦10,000
+export const DEFAULT_DELIVERY_FEE = 50; // £50.00
+export const FREE_DELIVERY_THRESHOLD = 100; // Free delivery over £100.00
 
 // API Routes
 export const API_ROUTES = {

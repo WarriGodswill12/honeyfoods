@@ -1,30 +1,39 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { convexClient, api } from "@/lib/convex-server";
 import { slugify } from "@/lib/utils";
+import { Id } from "@/convex/_generated/dataModel";
 
 // GET /api/products/[id] - Get a single product
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
-    const product = await prisma.product.findUnique({
-      where: { id },
+    const product = await convexClient.query(api.products.getProductById, {
+      id: id as Id<"products">,
     });
 
     if (!product) {
       return NextResponse.json({ error: "Product not found" }, { status: 404 });
     }
 
-    return NextResponse.json(product);
+    // Map _id to id for backwards compatibility
+    const mappedProduct = {
+      ...product,
+      id: product._id,
+      createdAt: new Date(product.createdAt),
+      updatedAt: new Date(product.updatedAt),
+    };
+
+    return NextResponse.json(mappedProduct);
   } catch (error) {
     console.error("Error fetching product:", error);
     return NextResponse.json(
       { error: "Failed to fetch product" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -32,7 +41,7 @@ export async function GET(
 // PUT /api/products/[id] - Update a product (Admin only)
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -48,9 +57,10 @@ export async function PUT(
     const { id } = await params;
 
     // Check if product exists
-    const existingProduct = await prisma.product.findUnique({
-      where: { id },
-    });
+    const existingProduct = await convexClient.query(
+      api.products.getProductById,
+      { id: id as Id<"products"> },
+    );
 
     if (!existingProduct) {
       return NextResponse.json({ error: "Product not found" }, { status: 404 });
@@ -61,42 +71,53 @@ export async function PUT(
     if (name && name !== existingProduct.name) {
       slug = slugify(name);
 
-      const slugExists = await prisma.product.findFirst({
-        where: {
-          slug,
-          id: { not: id },
-        },
-      });
+      const slugExists = await convexClient.query(
+        api.products.getProductBySlug,
+        { slug },
+      );
 
-      if (slugExists) {
+      if (slugExists && slugExists._id !== id) {
         return NextResponse.json(
           { error: "A product with this name already exists" },
-          { status: 400 }
+          { status: 400 },
         );
       }
     }
 
-    const product = await prisma.product.update({
-      where: { id },
-      data: {
-        name,
-        slug,
-        description,
-        price: price ? parseFloat(price) : undefined,
-        category,
-        image:
-          image || existingProduct.image || "/images/placeholder-product.svg",
-        featured,
-        available,
-      },
+    await convexClient.mutation(api.products.updateProduct, {
+      id: id as Id<"products">,
+      name,
+      slug,
+      description,
+      price: price ? parseFloat(price) : undefined, // Store in pounds
+      category,
+      image:
+        image || existingProduct.image || "/images/placeholder-product.svg",
+      featured,
+      available,
     });
 
-    return NextResponse.json(product);
+    // Fetch updated product
+    const product = await convexClient.query(api.products.getProductById, {
+      id: id as Id<"products">,
+    });
+
+    // Map _id to id for backwards compatibility
+    const mappedProduct = product
+      ? {
+          ...product,
+          id: product._id,
+          createdAt: new Date(product.createdAt),
+          updatedAt: new Date(product.updatedAt),
+        }
+      : null;
+
+    return NextResponse.json(mappedProduct);
   } catch (error) {
     console.error("Error updating product:", error);
     return NextResponse.json(
       { error: "Failed to update product" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -104,7 +125,7 @@ export async function PUT(
 // DELETE /api/products/[id] - Delete a product (Admin only)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -116,8 +137,8 @@ export async function DELETE(
     const { id } = await params;
 
     // Check if product exists
-    const product = await prisma.product.findUnique({
-      where: { id },
+    const product = await convexClient.query(api.products.getProductById, {
+      id: id as Id<"products">,
     });
 
     if (!product) {
@@ -125,9 +146,10 @@ export async function DELETE(
     }
 
     // Check if product has orders
-    const orderCount = await prisma.orderItem.count({
-      where: { productId: id },
-    });
+    const orderCount = await convexClient.query(
+      api.orderItems.countByProductId,
+      { productId: id as Id<"products"> },
+    );
 
     if (orderCount > 0) {
       return NextResponse.json(
@@ -135,12 +157,12 @@ export async function DELETE(
           error:
             "Cannot delete product with existing orders. Consider marking it as unavailable instead.",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    await prisma.product.delete({
-      where: { id },
+    await convexClient.mutation(api.products.deleteProduct, {
+      id: id as Id<"products">,
     });
 
     return NextResponse.json({ message: "Product deleted successfully" });
@@ -148,7 +170,7 @@ export async function DELETE(
     console.error("Error deleting product:", error);
     return NextResponse.json(
       { error: "Failed to delete product" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

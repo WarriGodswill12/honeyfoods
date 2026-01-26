@@ -1,7 +1,8 @@
 // Create Stripe payment intent
 import { NextRequest, NextResponse } from "next/server";
 import { StripeProvider } from "@/services/payment/stripe-provider";
-import { prisma } from "@/lib/prisma";
+import { convexClient, api } from "@/lib/convex-server";
+import { Id } from "@/convex/_generated/dataModel";
 
 export async function POST(request: NextRequest) {
   try {
@@ -30,9 +31,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Get order details
-    const order = await prisma.order.findUnique({
-      where: { id: orderId },
-      include: { orderItems: true },
+    const order = await convexClient.query(api.orders.getOrderById, {
+      id: orderId as Id<"orders">,
     });
 
     if (!order) {
@@ -42,9 +42,9 @@ export async function POST(request: NextRequest) {
     // Create payment intent with Stripe
     const stripeProvider = new StripeProvider();
     const paymentIntent = await stripeProvider.createPaymentIntent({
-      amount: order.total, // Already in pence
+      amount: Math.round(order.total * 100), // Convert pounds to pence for Stripe
       currency: "gbp", // UK pounds
-      orderId: order.id,
+      orderId: order._id,
       customerEmail,
       metadata: {
         orderNumber: order.orderNumber,
@@ -54,15 +54,13 @@ export async function POST(request: NextRequest) {
     });
 
     // Store payment record
-    await prisma.payment.create({
-      data: {
-        orderId: order.id,
-        amount: order.total,
-        currency: "GBP",
-        provider: "stripe",
-        providerPaymentId: paymentIntent.id,
-        status: "PENDING",
-      },
+    await convexClient.mutation(api.payments.createPayment, {
+      orderId: order._id,
+      amount: order.total,
+      currency: "GBP",
+      provider: "stripe",
+      providerPaymentId: paymentIntent.id,
+      status: "PENDING",
     });
 
     return NextResponse.json({

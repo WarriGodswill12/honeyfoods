@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { convexClient, api } from "@/lib/convex-server";
 import { slugify } from "@/lib/utils";
 import { sanitizeString } from "@/lib/sanitize";
 
@@ -27,19 +27,25 @@ export async function GET(request: NextRequest) {
       where.available = true;
     }
 
-    const products = await prisma.product.findMany({
-      where,
-      orderBy: {
-        createdAt: "desc",
-      },
+    const products = await convexClient.query(api.products.getProducts, {
+      category: category || undefined,
+      available: available === "true" ? true : undefined,
     });
 
-    return NextResponse.json(products);
+    // Map Convex _id to id for backwards compatibility with frontend
+    const mappedProducts = products.map((product) => ({
+      ...product,
+      id: product._id,
+      createdAt: new Date(product.createdAt),
+      updatedAt: new Date(product.updatedAt),
+    }));
+
+    return NextResponse.json(mappedProducts);
   } catch (error) {
     console.error("Error fetching products:", error);
     return NextResponse.json(
       { error: "Failed to fetch products" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -61,7 +67,7 @@ export async function POST(request: NextRequest) {
     if (!name || !description || !price || !category) {
       return NextResponse.json(
         { error: "Missing required fields" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -74,36 +80,35 @@ export async function POST(request: NextRequest) {
     const slug = slugify(sanitizedName);
 
     // Check if slug already exists
-    const existingProduct = await prisma.product.findUnique({
-      where: { slug },
-    });
+    const existingProduct = await convexClient.query(
+      api.products.getProductBySlug,
+      { slug },
+    );
 
     if (existingProduct) {
       return NextResponse.json(
         { error: "A product with this name already exists" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    const product = await prisma.product.create({
-      data: {
-        name: sanitizedName,
-        slug,
-        description: sanitizedDescription,
-        price: parseFloat(price),
-        category: sanitizedCategory,
-        image: image || "/images/placeholder-product.svg",
-        featured: featured || false,
-        available: available !== false, // Default to true
-      },
+    const productId = await convexClient.mutation(api.products.createProduct, {
+      name: sanitizedName,
+      slug,
+      description: sanitizedDescription,
+      price: parseFloat(price), // Store in pounds
+      category: sanitizedCategory,
+      image: image || "/images/placeholder-product.svg",
+      featured: featured || false,
+      available: available !== false, // Default to true
     });
 
-    return NextResponse.json(product, { status: 201 });
+    return NextResponse.json({ _id: productId }, { status: 201 });
   } catch (error) {
     console.error("Error creating product:", error);
     return NextResponse.json(
       { error: "Failed to create product" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
