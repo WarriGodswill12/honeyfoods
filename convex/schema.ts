@@ -20,8 +20,12 @@ export default defineSchema({
     slug: v.string(),
     description: v.optional(v.string()),
     price: v.number(), // Store as pounds (decimal)
-    image: v.string(), // Cloudinary URL or local path
-    imagePublicId: v.optional(v.string()), // Cloudinary public ID for deletion
+    image: v.string(), // Primary image URL (for backward compatibility)
+    imageStorageId: v.optional(v.id("_storage")), // Primary image storage ID
+    images: v.optional(v.array(v.string())), // Multiple product images (URLs for backward compatibility)
+    imagesStorageIds: v.optional(v.array(v.id("_storage"))), // Multiple product images storage IDs
+    imagePublicId: v.optional(v.string()), // Cloudinary public ID for deletion (deprecated)
+    imagePublicIds: v.optional(v.array(v.string())), // Cloudinary public IDs for multiple images (deprecated)
     available: v.boolean(),
     featured: v.boolean(),
     category: v.optional(v.string()),
@@ -101,15 +105,15 @@ export default defineSchema({
   // Gallery Images table
   galleryImages: defineTable({
     type: v.string(), // 'gallery', 'hero', 'banner', etc.
-    url: v.string(),
+    url: v.string(), // Image URL (for backward compatibility)
+    storageId: v.optional(v.id("_storage")), // Convex storage ID
     alt: v.string(),
-    order: v.number(),
+    order: v.optional(v.number()), // Deprecated - kept for backward compatibility with existing data
     featured: v.boolean(),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
     .index("by_type", ["type"])
-    .index("by_order", ["order"])
     .index("by_featured", ["featured"]),
 
   // Settings table (singleton)
@@ -124,6 +128,10 @@ export default defineSchema({
     storePhone: v.optional(v.string()),
     storeAddress: v.optional(v.string()),
     storeTagline: v.optional(v.string()),
+    heroBackgroundImage: v.optional(v.string()), // Image URL (for backward compatibility)
+    heroBackgroundImageStorageId: v.optional(v.id("_storage")), // Convex storage ID
+    aboutUsImage: v.optional(v.string()), // Image URL (for backward compatibility)
+    aboutUsImageStorageId: v.optional(v.id("_storage")), // Convex storage ID
     createdAt: v.number(),
     updatedAt: v.number(),
   }),

@@ -21,12 +21,36 @@ export const getSettings = query({
         storeEmail: undefined,
         storePhone: undefined,
         storeAddress: undefined,
+        heroBackgroundImage: undefined,
+        heroBackgroundImageStorageId: undefined,
+        aboutUsImage: undefined,
+        aboutUsImageStorageId: undefined,
         createdAt: Date.now(),
         updatedAt: Date.now(),
       };
     }
 
-    return settings;
+    // Fetch URLs from storage IDs if available
+    let heroBackgroundImage = settings.heroBackgroundImage;
+    let aboutUsImage = settings.aboutUsImage;
+
+    if (settings.heroBackgroundImageStorageId) {
+      const url = await ctx.storage.getUrl(
+        settings.heroBackgroundImageStorageId,
+      );
+      if (url) heroBackgroundImage = url;
+    }
+
+    if (settings.aboutUsImageStorageId) {
+      const url = await ctx.storage.getUrl(settings.aboutUsImageStorageId);
+      if (url) aboutUsImage = url;
+    }
+
+    return {
+      ...settings,
+      heroBackgroundImage,
+      aboutUsImage,
+    };
   },
 });
 
@@ -47,6 +71,10 @@ export const updateSettings = mutation({
     storePhone: v.optional(v.string()),
     storeAddress: v.optional(v.string()),
     storeTagline: v.optional(v.string()),
+    heroBackgroundImage: v.optional(v.string()),
+    heroBackgroundImageStorageId: v.optional(v.id("_storage")),
+    aboutUsImage: v.optional(v.string()),
+    aboutUsImageStorageId: v.optional(v.id("_storage")),
   },
   handler: async (ctx, args) => {
     const existing = await ctx.db.query("settings").first();
@@ -72,6 +100,10 @@ export const updateSettings = mutation({
         storePhone: args.storePhone,
         storeAddress: args.storeAddress,
         storeTagline: args.storeTagline,
+        heroBackgroundImage: args.heroBackgroundImage,
+        heroBackgroundImageStorageId: args.heroBackgroundImageStorageId,
+        aboutUsImage: args.aboutUsImage,
+        aboutUsImageStorageId: args.aboutUsImageStorageId,
         createdAt: now,
         updatedAt: now,
       });

@@ -5,6 +5,7 @@ import "./globals.css";
 import { siteConfig } from "@/config/site";
 import { CartProvider } from "@/store/cart-store";
 import { ConvexClientProvider } from "@/components/shared/convex-provider";
+import { Toaster } from "sonner";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -119,6 +120,7 @@ export default function RootLayout({
         <ConvexClientProvider>
           <CartProvider>{children}</CartProvider>
         </ConvexClientProvider>
+        <Toaster position="top-right" richColors />
       </body>
     </html>
   );

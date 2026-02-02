@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { toast } from "sonner";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -44,22 +45,31 @@ export default function GalleryManagement() {
   const deleteImage = useMutation(api.gallery.deleteGalleryImage);
   const updateSettings = useMutation(api.settings.updateSettings);
 
+  // File storage mutations
+  const generateUploadUrl = useMutation(api.fileStorage.generateUploadUrl);
+
   const images = allImages || [];
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingImage, setEditingImage] = useState<any | null>(null);
   const [formData, setFormData] = useState({
     type: "gallery" as "hero" | "gallery",
-    url: "",
+    urls: [] as string[],
+    storageIds: [] as Id<"_storage">[],
     alt: "",
     featured: false,
-    order: 0,
   });
   const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   // Settings images
   const [heroBackgroundImage, setHeroBackgroundImage] = useState("");
+  const [heroBackgroundStorageId, setHeroBackgroundStorageId] = useState<
+    Id<"_storage"> | undefined
+  >();
   const [aboutUsImage, setAboutUsImage] = useState("");
+  const [aboutUsStorageId, setAboutUsStorageId] = useState<
+    Id<"_storage"> | undefined
+  >();
   const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [settingsMessage, setSettingsMessage] = useState<{
     type: "success" | "error";
@@ -69,8 +79,12 @@ export default function GalleryManagement() {
   // Load settings when available
   useEffect(() => {
     if (settings) {
-      // Note: heroBackgroundImage and aboutUsImage are not in the current settings schema
-      // You may need to add them or handle them differently
+      setHeroBackgroundImage((settings as any).heroBackgroundImage || "");
+      setHeroBackgroundStorageId(
+        (settings as any).heroBackgroundImageStorageId,
+      );
+      setAboutUsImage((settings as any).aboutUsImage || "");
+      setAboutUsStorageId((settings as any).aboutUsImageStorageId);
     }
   }, [settings]);
 
@@ -79,13 +93,14 @@ export default function GalleryManagement() {
     setSettingsMessage(null);
 
     try {
-      // Note: heroBackgroundImage and aboutUsImage need to be added to the settings schema
-      // For now, this will skip the update
-      // await updateSettings({
-      //   heroBackgroundImage,
-      //   aboutUsImage,
-      // });
+      await updateSettings({
+        heroBackgroundImage,
+        heroBackgroundImageStorageId: heroBackgroundStorageId,
+        aboutUsImage,
+        aboutUsImageStorageId: aboutUsStorageId,
+      });
 
+      toast.success("Page images saved successfully!");
       setSettingsMessage({
         type: "success",
         text: "Images saved successfully!",
@@ -93,6 +108,7 @@ export default function GalleryManagement() {
       setTimeout(() => setSettingsMessage(null), 3000);
     } catch (error: any) {
       console.error("Error saving settings:", error);
+      toast.error(error.message || "Failed to save images");
       setSettingsMessage({
         type: "error",
         text: error.message || "Failed to save images",
@@ -106,10 +122,10 @@ export default function GalleryManagement() {
     setEditingImage(null);
     setFormData({
       type: "gallery",
-      url: "",
+      urls: [],
+      storageIds: [],
       alt: "",
       featured: false,
-      order: 0,
     });
     setIsModalOpen(true);
   };
@@ -118,10 +134,10 @@ export default function GalleryManagement() {
     setEditingImage(image);
     setFormData({
       type: image.type,
-      url: image.url,
+      urls: [image.url],
+      storageIds: image.storageId ? [image.storageId] : [],
       alt: image.alt,
       featured: image.featured,
-      order: image.order,
     });
     setIsModalOpen(true);
   };
@@ -131,20 +147,36 @@ export default function GalleryManagement() {
 
     try {
       if (editingImage) {
-        // Update existing image
+        // Update existing image (single image)
         await updateImage({
           id: editingImage._id as Id<"galleryImages">,
-          ...formData,
+          type: formData.type,
+          url: formData.urls[0] || editingImage.url,
+          storageId: formData.storageIds[0],
+          alt: formData.alt,
+          featured: formData.featured,
         });
+        toast.success("Image updated successfully!");
       } else {
-        // Add new image
-        await createImage(formData);
+        // Add new images (can be multiple)
+        for (let i = 0; i < formData.storageIds.length; i++) {
+          await createImage({
+            type: formData.type,
+            url: formData.urls[i],
+            storageId: formData.storageIds[i],
+            alt: formData.alt,
+            featured: formData.featured,
+          });
+        }
+        toast.success(
+          `${formData.storageIds.length} image(s) added successfully!`,
+        );
       }
 
       setIsModalOpen(false);
     } catch (error: any) {
       console.error("Error saving image:", error);
-      alert(error.message || "Failed to save image");
+      toast.error(error.message || "Failed to save image");
     }
   };
 
@@ -152,19 +184,16 @@ export default function GalleryManagement() {
     if (confirm("Are you sure you want to delete this image?")) {
       try {
         await deleteImage({ id });
+        toast.success("Image deleted successfully!");
       } catch (error: any) {
         console.error("Error deleting image:", error);
-        alert(error.message || "Failed to delete image");
+        toast.error(error.message || "Failed to delete image");
       }
     }
   };
 
-  const heroImages = images
-    .filter((img) => img.type === "hero")
-    .sort((a, b) => a.order - b.order);
-  const galleryImages = images
-    .filter((img) => img.type === "gallery")
-    .sort((a, b) => a.order - b.order);
+  const heroImages = images.filter((img) => img.type === "hero");
+  const galleryImages = images.filter((img) => img.type === "gallery");
 
   if (allImages === undefined || settings === undefined) {
     return (
@@ -254,30 +283,40 @@ export default function GalleryManagement() {
                   const file = e.target.files?.[0];
                   if (!file) return;
 
-                  const formData = new FormData();
-                  formData.append("file", file);
-                  formData.append("folder", "honeyfoods/hero");
-
                   try {
                     setIsSavingSettings(true);
-                    const response = await fetch("/api/upload", {
+
+                    // Step 1: Generate upload URL
+                    const postUrl = await generateUploadUrl();
+
+                    // Step 2: Upload file to Convex storage
+                    const result = await fetch(postUrl, {
                       method: "POST",
-                      body: formData,
+                      headers: { "Content-Type": file.type },
+                      body: file,
                     });
 
-                    if (!response.ok) {
-                      const error = await response.json();
-                      throw new Error(error.error);
+                    if (!result.ok) {
+                      const error = await result.json();
+                      throw new Error(error.error || "Upload failed");
                     }
 
-                    const data = await response.json();
-                    setHeroBackgroundImage(data.url);
+                    const { storageId } = await result.json();
+
+                    // Step 3: Save storage ID
+                    setHeroBackgroundStorageId(storageId);
+                    // The URL will be generated by Convex when displaying
+                    // For now, set a placeholder to show upload succeeded
+                    setHeroBackgroundImage("uploaded");
+
+                    toast.success("Hero image uploaded! Click Save to apply.");
                     setSettingsMessage({
                       type: "success",
                       text: "Image uploaded! Click Save to apply.",
                     });
                     setTimeout(() => setSettingsMessage(null), 3000);
                   } catch (error: any) {
+                    toast.error(error.message || "Upload failed");
                     setSettingsMessage({
                       type: "error",
                       text: error.message || "Upload failed",
@@ -319,30 +358,42 @@ export default function GalleryManagement() {
                   const file = e.target.files?.[0];
                   if (!file) return;
 
-                  const formData = new FormData();
-                  formData.append("file", file);
-                  formData.append("folder", "honeyfoods/about");
-
                   try {
                     setIsSavingSettings(true);
-                    const response = await fetch("/api/upload", {
+
+                    // Step 1: Generate upload URL
+                    const postUrl = await generateUploadUrl();
+
+                    // Step 2: Upload file to Convex storage
+                    const result = await fetch(postUrl, {
                       method: "POST",
-                      body: formData,
+                      headers: { "Content-Type": file.type },
+                      body: file,
                     });
 
-                    if (!response.ok) {
-                      const error = await response.json();
-                      throw new Error(error.error);
+                    if (!result.ok) {
+                      const error = await result.json();
+                      throw new Error(error.error || "Upload failed");
                     }
 
-                    const data = await response.json();
-                    setAboutUsImage(data.url);
+                    const { storageId } = await result.json();
+
+                    // Step 3: Save storage ID
+                    setAboutUsStorageId(storageId);
+                    // The URL will be generated by Convex when displaying
+                    // For now, set a placeholder to show upload succeeded
+                    setAboutUsImage("uploaded");
+
+                    toast.success(
+                      "About Us image uploaded! Click Save to apply.",
+                    );
                     setSettingsMessage({
                       type: "success",
                       text: "Image uploaded! Click Save to apply.",
                     });
                     setTimeout(() => setSettingsMessage(null), 3000);
                   } catch (error: any) {
+                    toast.error(error.message || "Upload failed");
                     setSettingsMessage({
                       type: "error",
                       text: error.message || "Upload failed",
@@ -409,10 +460,9 @@ export default function GalleryManagement() {
                 />
               </div>
               <div className="p-4 bg-white">
-                <p className="font-semibold text-sm text-charcoal-black mb-1 truncate">
+                <p className="font-semibold text-sm text-charcoal-black truncate">
                   {image.alt}
                 </p>
-                <p className="text-xs text-gray-500">Order: {image.order}</p>
               </div>
               <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                 <Button
@@ -461,10 +511,9 @@ export default function GalleryManagement() {
                 )}
               </div>
               <div className="p-4 bg-white">
-                <p className="font-semibold text-sm text-charcoal-black mb-1 truncate">
+                <p className="font-semibold text-sm text-charcoal-black truncate">
                   {image.alt}
                 </p>
-                <p className="text-xs text-gray-500">Order: {image.order}</p>
               </div>
               <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                 <Button
@@ -528,38 +577,52 @@ export default function GalleryManagement() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="file">Upload Image</Label>
+                <Label htmlFor="file">Upload Images</Label>
                 <Input
                   id="file"
                   type="file"
                   accept="image/*"
+                  multiple
                   onChange={async (e) => {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
-
-                    const formDataUpload = new FormData();
-                    formDataUpload.append("file", file);
-                    formDataUpload.append(
-                      "folder",
-                      `honeyfoods/${formData.type}`,
-                    );
+                    const files = e.target.files;
+                    if (!files || files.length === 0) return;
 
                     try {
                       setIsUploadingImage(true);
-                      const response = await fetch("/api/upload", {
-                        method: "POST",
-                        body: formDataUpload,
-                      });
+                      const uploadedStorageIds: Id<"_storage">[] = [];
 
-                      if (!response.ok) {
-                        const error = await response.json();
-                        throw new Error(error.error);
+                      // Upload each file
+                      for (const file of Array.from(files)) {
+                        // Step 1: Generate upload URL
+                        const postUrl = await generateUploadUrl();
+
+                        // Step 2: Upload file to Convex storage
+                        const result = await fetch(postUrl, {
+                          method: "POST",
+                          headers: { "Content-Type": file.type },
+                          body: file,
+                        });
+
+                        if (!result.ok) {
+                          const error = await result.json();
+                          throw new Error(error.error || "Upload failed");
+                        }
+
+                        const { storageId } = await result.json();
+                        uploadedStorageIds.push(storageId);
                       }
 
-                      const data = await response.json();
-                      setFormData({ ...formData, url: data.url });
+                      // Step 3: Save storage IDs
+                      setFormData({
+                        ...formData,
+                        urls: uploadedStorageIds.map(() => "uploaded"),
+                        storageIds: uploadedStorageIds,
+                      });
+                      toast.success(
+                        `${uploadedStorageIds.length} image(s) uploaded successfully!`,
+                      );
                     } catch (error: any) {
-                      alert(
+                      toast.error(
                         error.message || "Upload failed. Please try again.",
                       );
                     } finally {
@@ -567,13 +630,18 @@ export default function GalleryManagement() {
                     }
                   }}
                   disabled={isUploadingImage}
-                  required={!formData.url}
+                  required={formData.storageIds.length === 0}
                 />
                 {isUploadingImage && (
-                  <p className="text-xs text-blue-600">Uploading image...</p>
+                  <p className="text-xs text-blue-600">Uploading images...</p>
+                )}
+                {formData.storageIds.length > 0 && (
+                  <p className="text-xs text-green-600">
+                    {formData.storageIds.length} image(s) ready to save
+                  </p>
                 )}
                 <p className="text-xs text-gray-500">
-                  Upload JPEG, PNG, or WebP images (max 10MB)
+                  Upload multiple JPEG, PNG, or WebP images (max 10MB each)
                 </p>
               </div>
 
@@ -589,26 +657,8 @@ export default function GalleryManagement() {
                   }
                   required
                 />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="order">Display Order</Label>
-                <Input
-                  id="order"
-                  type="number"
-                  min="0"
-                  placeholder="1"
-                  value={formData.order}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      order: parseInt(e.target.value) || 0,
-                    })
-                  }
-                  required
-                />
                 <p className="text-xs text-gray-500">
-                  Lower numbers appear first
+                  This description will be used for all uploaded images
                 </p>
               </div>
 
@@ -638,20 +688,15 @@ export default function GalleryManagement() {
                 </div>
               )}
 
-              {formData.url && (
+              {formData.storageIds.length > 0 && (
                 <div className="space-y-2">
-                  <Label>Preview</Label>
-                  <div className="relative aspect-video rounded-lg overflow-hidden border-2 border-gray-200">
-                    <img
-                      src={formData.url}
-                      alt={formData.alt || "Preview"}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src =
-                          "https://via.placeholder.com/800x450?text=Invalid+Image+URL";
-                      }}
-                    />
-                  </div>
+                  <Label>
+                    Preview ({formData.storageIds.length} image
+                    {formData.storageIds.length > 1 ? "s" : ""})
+                  </Label>
+                  <p className="text-xs text-gray-500">
+                    Images uploaded successfully and ready to save
+                  </p>
                 </div>
               )}
 
@@ -660,10 +705,14 @@ export default function GalleryManagement() {
                   type="submit"
                   size="lg"
                   className="flex-1 font-semibold"
-                  disabled={isUploadingImage || !formData.url}
+                  disabled={
+                    isUploadingImage || formData.storageIds.length === 0
+                  }
                 >
                   <Save className="mr-2 h-5 w-5" />
-                  {editingImage ? "Update Image" : "Add Image"}
+                  {editingImage
+                    ? "Update Image"
+                    : `Add ${formData.storageIds.length} Image${formData.storageIds.length > 1 ? "s" : ""}`}
                 </Button>
                 <Button
                   type="button"

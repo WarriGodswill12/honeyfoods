@@ -79,6 +79,8 @@ export default function ProductsPage() {
     price: "",
     category: "",
     image: "",
+    images: [] as string[],
+    imagePublicIds: [] as string[],
     featured: false,
     available: true,
   });
@@ -90,7 +92,7 @@ export default function ProductsPage() {
       formData.description.trim() !== "" &&
       formData.price !== "" &&
       formData.category.trim() !== "" &&
-      formData.image.trim() !== "";
+      (formData.images.length > 0 || formData.image.trim() !== "");
 
     return hasRequiredFields && !isUploadingImage;
   };
@@ -103,6 +105,8 @@ export default function ProductsPage() {
       price: "",
       category: "",
       image: "",
+      images: [],
+      imagePublicIds: [],
       featured: false,
       available: true,
     });
@@ -118,6 +122,8 @@ export default function ProductsPage() {
       price: product.price.toString(), // Already in pounds
       category: product.category,
       image: product.image,
+      images: product.images || [],
+      imagePublicIds: product.imagePublicIds || [],
       featured: product.featured,
       available: product.available,
     });
@@ -141,6 +147,11 @@ export default function ProductsPage() {
         price: parseFloat(formData.price), // Store directly in pounds
         category: formData.category.trim(),
         image: formData.image.trim(),
+        images: formData.images.length > 0 ? formData.images : undefined,
+        imagePublicIds:
+          formData.imagePublicIds.length > 0
+            ? formData.imagePublicIds
+            : undefined,
         featured: formData.featured,
         available: formData.available,
       };
@@ -443,32 +454,56 @@ export default function ProductsPage() {
 
           <div>
             <label className="mb-2 block text-sm font-medium text-charcoal-black">
-              Product Image <span className="text-red-500">*</span>
+              Product Images <span className="text-red-500">*</span>
             </label>
             <input
               type="file"
+              multiple
               accept="image/*"
               onChange={async (e) => {
-                const file = e.target.files?.[0];
-                if (!file) return;
-
-                const fd = new FormData();
-                fd.append("file", file);
-                fd.append("folder", "honeyfoods/products");
+                const files = Array.from(e.target.files || []);
+                if (!files.length) return;
 
                 setIsUploadingImage(true);
 
                 try {
-                  const res = await fetch("/api/upload", {
-                    method: "POST",
-                    body: fd,
-                  });
-                  if (!res.ok) {
-                    const err = await res.json();
-                    throw new Error(err.error || "Upload failed");
+                  const uploadedImages: string[] = [];
+                  const uploadedPublicIds: string[] = [];
+
+                  for (const file of files) {
+                    const fd = new FormData();
+                    fd.append("file", file);
+                    fd.append("folder", "honeyfoods/products");
+
+                    const res = await fetch("/api/upload", {
+                      method: "POST",
+                      body: fd,
+                    });
+
+                    if (!res.ok) {
+                      const err = await res.json();
+                      throw new Error(err.error || "Upload failed");
+                    }
+
+                    const data = await res.json();
+                    uploadedImages.push(data.url);
+                    if (data.publicId) {
+                      uploadedPublicIds.push(data.publicId);
+                    }
                   }
-                  const data = await res.json();
-                  setFormData({ ...formData, image: data.url });
+
+                  // Set the first image as the main image if not already set
+                  const mainImage = formData.image || uploadedImages[0];
+
+                  setFormData({
+                    ...formData,
+                    image: mainImage,
+                    images: [...formData.images, ...uploadedImages],
+                    imagePublicIds: [
+                      ...formData.imagePublicIds,
+                      ...uploadedPublicIds,
+                    ],
+                  });
                 } catch (err) {
                   console.error("Upload error:", err);
                   alert("Image upload failed. Please try again.");
@@ -485,31 +520,64 @@ export default function ProductsPage() {
               <div className="mt-3 flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-honey-gold"></div>
                 <span className="text-sm text-blue-700 font-medium">
-                  Uploading image...
+                  Uploading images...
                 </span>
               </div>
             )}
 
-            {/* Image Preview */}
-            {formData.image && !isUploadingImage && (
-              <div className="mt-3 flex items-center gap-3">
-                <img
-                  src={formData.image}
-                  alt="Preview"
-                  className="h-24 w-24 object-cover rounded-md border"
-                />
-                <div className="flex items-center gap-2 text-green-600">
+            {/* Image Preview Grid */}
+            {formData.images.length > 0 && !isUploadingImage && (
+              <div className="mt-3">
+                <div className="grid grid-cols-3 gap-3">
+                  {formData.images.map((imageUrl, index) => (
+                    <div key={index} className="relative group">
+                      <img
+                        src={imageUrl}
+                        alt={`Preview ${index + 1}`}
+                        className="h-24 w-full object-cover rounded-md border"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newImages = formData.images.filter(
+                            (_, i) => i !== index,
+                          );
+                          const newPublicIds = formData.imagePublicIds.filter(
+                            (_, i) => i !== index,
+                          );
+                          setFormData({
+                            ...formData,
+                            images: newImages,
+                            imagePublicIds: newPublicIds,
+                            image: newImages[0] || "",
+                          });
+                        }}
+                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                      {index === 0 && (
+                        <Badge className="absolute bottom-1 left-1 text-xs bg-honey-gold">
+                          Main
+                        </Badge>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <div className="flex items-center gap-2 text-green-600 mt-2">
                   <CheckCircle2 className="h-5 w-5" />
                   <span className="text-sm font-medium">
-                    Image uploaded successfully
+                    {formData.images.length} image
+                    {formData.images.length > 1 ? "s" : ""} uploaded
                   </span>
                 </div>
               </div>
             )}
 
-            {!formData.image && !isUploadingImage && (
+            {formData.images.length === 0 && !isUploadingImage && (
               <p className="mt-2 text-xs text-gray-500">
-                Required. Please upload a product image before submitting.
+                Required. Upload one or more product images. The first image
+                will be used as the main image.
               </p>
             )}
           </div>

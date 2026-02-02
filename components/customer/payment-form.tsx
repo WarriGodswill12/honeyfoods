@@ -22,11 +22,40 @@ export function PaymentForm({ orderId, onSuccess, onError }: PaymentFormProps) {
   const elements = useElements();
   const [isProcessing, setIsProcessing] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [isReady, setIsReady] = useState(false);
+
+  // Wait for Stripe Elements to be ready
+  useEffect(() => {
+    if (!stripe || !elements) {
+      return;
+    }
+
+    // Wait for PaymentElement to be ready
+    const checkReady = async () => {
+      try {
+        // Elements are available, mark as ready
+        setIsReady(true);
+      } catch (err) {
+        console.error("Error checking elements ready state:", err);
+      }
+    };
+
+    checkReady();
+  }, [stripe, elements]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!stripe || !elements) {
+      const errorMsg = "Payment system is not ready. Please refresh the page and try again.";
+      setMessage(errorMsg);
+      onError(errorMsg);
+      return;
+    }
+
+    if (!isReady) {
+      const errorMsg = "Payment form is still loading. Please wait a moment.";
+      setMessage(errorMsg);
       return;
     }
 
@@ -34,6 +63,16 @@ export function PaymentForm({ orderId, onSuccess, onError }: PaymentFormProps) {
     setMessage(null);
 
     try {
+      // Submit the form to ensure all fields are filled
+      const { error: submitError } = await elements.submit();
+      
+      if (submitError) {
+        setMessage(submitError.message || "Please check your payment details");
+        onError(submitError.message || "Payment validation failed");
+        setIsProcessing(false);
+        return;
+      }
+
       // Confirm payment with return_url for redirect-based methods
       const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
@@ -72,16 +111,18 @@ export function PaymentForm({ orderId, onSuccess, onError }: PaymentFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {!isReady && (
+        <div className="flex items-center justify-center py-8">
+          <LoadingSpinner />
+          <span className="ml-2 text-gray-600">Loading payment form...</span>
+        </div>
+      )}
+      
       <PaymentElement
+        onReady={() => setIsReady(true)}
         options={{
           layout: "tabs",
-          paymentMethodOrder: [
-            "apple_pay",
-            "google_pay",
-            "amazon_pay",
-            "revolut_pay",
-            "card",
-          ],
+          paymentMethodOrder: ["apple_pay", "google_pay", "card"],
         }}
       />
 
@@ -93,7 +134,7 @@ export function PaymentForm({ orderId, onSuccess, onError }: PaymentFormProps) {
 
       <Button
         type="submit"
-        disabled={!stripe || isProcessing}
+        disabled={!stripe || !isReady || isProcessing}
         className="w-full text-lg py-6"
         size="lg"
       >

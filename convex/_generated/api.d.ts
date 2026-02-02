@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as fileStorage from "../fileStorage.js";
 import type * as gallery from "../gallery.js";
 import type * as migratePricesToPounds from "../migratePricesToPounds.js";
 import type * as orderItems from "../orderItems.js";
@@ -25,6 +26,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  fileStorage: typeof fileStorage;
   gallery: typeof gallery;
   migratePricesToPounds: typeof migratePricesToPounds;
   orderItems: typeof orderItems;

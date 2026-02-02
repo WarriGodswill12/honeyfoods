@@ -213,28 +213,56 @@ export default function ProductDetailPage() {
           <div className="relative">
             <Carousel className="w-full">
               <CarouselContent>
-                <CarouselItem>
-                  <div className="relative aspect-square rounded-2xl sm:rounded-3xl overflow-hidden bg-soft-cream shadow-lg">
-                    <Image
-                      src={product.image || "/images/placeholder-product.svg"}
-                      alt={product.name}
-                      fill
-                      className="object-cover"
-                      priority
-                    />
-                    {product.featured && (
-                      <div className="absolute top-4 right-4">
-                        <Badge variant="primary" className="text-sm">
-                          Featured
-                        </Badge>
+                {/* Show all images if product has multiple images, otherwise show primary image */}
+                {product.images && product.images.length > 0 ? (
+                  product.images.map((img, index) => (
+                    <CarouselItem key={index}>
+                      <div className="relative aspect-square rounded-2xl sm:rounded-3xl overflow-hidden bg-soft-cream shadow-lg">
+                        <Image
+                          src={img || "/images/placeholder-product.svg"}
+                          alt={`${product.name} - Image ${index + 1}`}
+                          fill
+                          className="object-cover"
+                          priority={index === 0}
+                        />
+                        {product.featured && index === 0 && (
+                          <div className="absolute top-4 right-4">
+                            <Badge variant="primary" className="text-sm">
+                              Featured
+                            </Badge>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                </CarouselItem>
+                    </CarouselItem>
+                  ))
+                ) : (
+                  <CarouselItem>
+                    <div className="relative aspect-square rounded-2xl sm:rounded-3xl overflow-hidden bg-soft-cream shadow-lg">
+                      <Image
+                        src={product.image || "/images/placeholder-product.svg"}
+                        alt={product.name}
+                        fill
+                        className="object-cover"
+                        priority
+                      />
+                      {product.featured && (
+                        <div className="absolute top-4 right-4">
+                          <Badge variant="primary" className="text-sm">
+                            Featured
+                          </Badge>
+                        </div>
+                      )}
+                    </div>
+                  </CarouselItem>
+                )}
               </CarouselContent>
-              {/* Navigation will appear when multiple images are added */}
-              <CarouselPrevious className="left-4" />
-              <CarouselNext className="right-4" />
+              {/* Show navigation only if there are multiple images */}
+              {((product.images && product.images.length > 1) || false) && (
+                <>
+                  <CarouselPrevious className="left-4" />
+                  <CarouselNext className="right-4" />
+                </>
+              )}
             </Carousel>
           </div>
         </FadeIn>
@@ -403,13 +431,10 @@ export default function ProductDetailPage() {
                   <>
                     <ShoppingCart className="h-5 w-5 mr-2" />
                     Add {quantity} to Cart - £
-                    {((product.price * quantity) / 100).toFixed(2)}
+                    {(product.price * quantity).toFixed(2)}
                   </>
                 )}
               </Button>
-              <p className="text-center text-sm text-gray-500">
-                Free delivery on orders above £50
-              </p>
             </div>
           </div>
         </SlideInUp>

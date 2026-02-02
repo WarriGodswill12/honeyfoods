@@ -13,7 +13,7 @@ export const getProducts = query({
     available: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
-    let products = await ctx.db.query("products").collect();
+    let products = await ctx.db.query("products").order("desc").collect();
 
     // Apply filters
     if (args.category) {
@@ -61,7 +61,11 @@ export const createProduct = mutation({
     description: v.optional(v.string()),
     price: v.number(),
     image: v.string(),
+    imageStorageId: v.optional(v.id("_storage")),
+    images: v.optional(v.array(v.string())),
+    imagesStorageIds: v.optional(v.array(v.id("_storage"))),
     imagePublicId: v.optional(v.string()),
+    imagePublicIds: v.optional(v.array(v.string())),
     available: v.boolean(),
     featured: v.boolean(),
     category: v.optional(v.string()),
@@ -95,7 +99,11 @@ export const updateProduct = mutation({
     description: v.optional(v.string()),
     price: v.optional(v.number()),
     image: v.optional(v.string()),
+    imageStorageId: v.optional(v.id("_storage")),
+    images: v.optional(v.array(v.string())),
+    imagesStorageIds: v.optional(v.array(v.id("_storage"))),
     imagePublicId: v.optional(v.string()),
+    imagePublicIds: v.optional(v.array(v.string())),
     available: v.optional(v.boolean()),
     featured: v.optional(v.boolean()),
     category: v.optional(v.string()),

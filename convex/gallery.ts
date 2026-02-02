@@ -22,8 +22,18 @@ export const getGalleryImages = query({
       images = await ctx.db.query("galleryImages").collect();
     }
 
-    const allImages = images;
-    return allImages.sort((a, b) => a.order - b.order);
+    // Fetch URLs from storage IDs
+    const imagesWithUrls = await Promise.all(
+      images.map(async (image) => {
+        if (image.storageId) {
+          const url = await ctx.storage.getUrl(image.storageId);
+          return { ...image, url: url || image.url };
+        }
+        return image;
+      }),
+    );
+
+    return imagesWithUrls;
   },
 });
 
@@ -35,7 +45,18 @@ export const getFeaturedGalleryImages = query({
       .withIndex("by_featured", (q) => q.eq("featured", true))
       .collect();
 
-    return images.sort((a, b) => a.order - b.order);
+    // Fetch URLs from storage IDs
+    const imagesWithUrls = await Promise.all(
+      images.map(async (image) => {
+        if (image.storageId) {
+          const url = await ctx.storage.getUrl(image.storageId);
+          return { ...image, url: url || image.url };
+        }
+        return image;
+      }),
+    );
+
+    return imagesWithUrls;
   },
 });
 
@@ -43,7 +64,16 @@ export const getFeaturedGalleryImages = query({
 export const getGalleryImageById = query({
   args: { id: v.id("galleryImages") },
   handler: async (ctx, args) => {
-    return await ctx.db.get(args.id);
+    const image = await ctx.db.get(args.id);
+    if (!image) return null;
+
+    // Fetch URL from storage ID if available
+    if (image.storageId) {
+      const url = await ctx.storage.getUrl(image.storageId);
+      return { ...image, url: url || image.url };
+    }
+
+    return image;
   },
 });
 
@@ -56,9 +86,10 @@ export const createGalleryImage = mutation({
   args: {
     type: v.string(),
     url: v.string(),
+    storageId: v.optional(v.id("_storage")),
     alt: v.string(),
-    order: v.number(),
     featured: v.boolean(),
+    order: v.optional(v.number()), // Deprecated - kept for backward compatibility
   },
   handler: async (ctx, args) => {
     const now = Date.now();
@@ -76,8 +107,8 @@ export const updateGalleryImage = mutation({
     id: v.id("galleryImages"),
     type: v.optional(v.string()),
     url: v.optional(v.string()),
+    storageId: v.optional(v.id("_storage")),
     alt: v.optional(v.string()),
-    order: v.optional(v.number()),
     featured: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {

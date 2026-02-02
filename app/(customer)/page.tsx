@@ -24,7 +24,7 @@ import { FadeIn, StaggerChildren } from "@/components/shared/animated";
 // Hero Section with Background Image Slider
 function HeroSection() {
   const [currentSlide, setCurrentSlide] = useState(0);
-  const featuredGallery = useQuery(api.gallery.getFeaturedGalleryImages);
+  const heroImages = useQuery(api.gallery.getGalleryImages, { type: "hero" });
 
   const defaultSlides = [
     {
@@ -49,10 +49,10 @@ function HeroSection() {
     },
   ];
 
-  // Use featured images if available, otherwise use defaults
+  // Use hero images if available, otherwise use defaults
   const slides =
-    featuredGallery && featuredGallery.length > 0
-      ? featuredGallery.map((img) => ({ image: img.url, alt: img.alt }))
+    heroImages && heroImages.length > 0
+      ? heroImages.map((img) => ({ image: img.url, alt: img.alt }))
       : defaultSlides;
 
   useEffect(() => {

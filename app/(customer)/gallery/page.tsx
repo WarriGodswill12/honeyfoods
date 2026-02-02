@@ -8,11 +8,12 @@ import { Button } from "@/components/ui/button";
 import { FadeIn, StaggerChildren } from "@/components/shared/animated";
 
 export default function GalleryPage() {
-  const allImages = useQuery(api.gallery.getGalleryImages, { type: "gallery" });
+  const allImages = useQuery(api.gallery.getFeaturedGalleryImages);
   type GalleryImageType = NonNullable<typeof allImages>[number];
   const [selected, setSelected] = useState<GalleryImageType | null>(null);
 
-  const images = allImages || [];
+  // Filter only gallery type images (not hero)
+  const images = allImages?.filter((img) => img.type === "gallery") || [];
 
   // Find index of selected image
   const selectedIndex = selected

@@ -58,7 +58,6 @@ export async function POST(req: NextRequest) {
         url: sanitizedUrl,
         alt: sanitizedAlt,
         featured: Boolean(featured),
-        order: order ?? 0,
       },
     );
 
