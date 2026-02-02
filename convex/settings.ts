@@ -13,7 +13,7 @@ export const getSettings = query({
     // Return default settings if none exist
     if (!settings) {
       return {
-        deliveryFee: 500, // £5.00
+        deliveryFee: 5, // £5.00 (stored in pounds, not pence)
         freeDeliveryThreshold: undefined,
         taxRate: undefined,
         currency: "GBP",
@@ -90,7 +90,7 @@ export const updateSettings = mutation({
     } else {
       // Create new settings
       const id = await ctx.db.insert("settings", {
-        deliveryFee: args.deliveryFee ?? 50,
+        deliveryFee: args.deliveryFee ?? 5, // £5.00 (stored in pounds, not pence)
         freeDeliveryThreshold: args.freeDeliveryThreshold,
         minOrderAmount: args.minOrderAmount,
         taxRate: args.taxRate,

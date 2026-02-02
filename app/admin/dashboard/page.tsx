@@ -220,7 +220,7 @@ export default function DashboardPage() {
                     </div>
                     <div className="text-right">
                       <p className="font-medium text-charcoal-black mb-1">
-                        {formatPrice(order.total)}
+                        £{order.total.toFixed(2)}
                       </p>
                       <span
                         className={`inline-flex items-center gap-1 text-xs ${status.color} px-2 py-1 rounded-full`}

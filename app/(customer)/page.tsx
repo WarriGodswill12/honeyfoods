@@ -195,9 +195,9 @@ function FeaturedProducts() {
   const allProducts = useQuery(api.products.getProducts, {});
   const { addItem } = useCart();
 
-  // Get available products, limit to 6
+  // Get featured products only, limit to 6
   const products = allProducts
-    ? allProducts.filter((p) => p.available).slice(0, 6)
+    ? allProducts.filter((p) => p.available && p.featured).slice(0, 6)
     : [];
 
   if (products.length === 0) {

@@ -218,3 +218,19 @@ export const updatePaymentStatus = mutation({
     return await ctx.db.get(args.id);
   },
 });
+
+// Fix order prices (migration helper - used to fix orders created with pence instead of pounds)
+export const fixOrderPrices = mutation({
+  args: {
+    orderId: v.id("orders"),
+    deliveryFee: v.number(),
+    total: v.number(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.orderId, {
+      deliveryFee: args.deliveryFee,
+      total: args.total,
+      updatedAt: Date.now(),
+    });
+  },
+});

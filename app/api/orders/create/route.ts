@@ -151,7 +151,7 @@ export async function POST(request: NextRequest) {
     const calculatedDeliveryFee =
       calculatedSubtotal >= (settings?.freeDeliveryThreshold || 100)
         ? 0
-        : settings?.deliveryFee || 50;
+        : settings?.deliveryFee || 5; // £5.00 (in pounds, not pence)
 
     const calculatedTotal = calculatedSubtotal + calculatedDeliveryFee;
 

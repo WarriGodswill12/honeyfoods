@@ -40,6 +40,14 @@ import {
   LayoutDashboard,
   CheckCircle2,
 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  SelectSeparator,
+} from "@/components/ui/select";
 import Image from "next/image";
 
 export default function ProductsPage() {
@@ -60,9 +68,19 @@ export default function ProductsPage() {
   const [productToDelete, setProductToDelete] = useState<any | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [isAddingNewCategory, setIsAddingNewCategory] = useState(false);
+  const [customCategory, setCustomCategory] = useState("");
 
   // Get products and filter them
   const products = allProducts || [];
+
+  // Get unique categories from existing products
+  const existingCategories = useMemo(() => {
+    const categories = products
+      .map((p) => p.category)
+      .filter((cat): cat is string => cat !== undefined && cat.trim() !== "");
+    return Array.from(new Set(categories)).sort();
+  }, [products]);
   const filteredProducts = useMemo(() => {
     if (!searchQuery) return products;
     return products.filter(
@@ -111,6 +129,8 @@ export default function ProductsPage() {
       available: true,
     });
     setError("");
+    setIsAddingNewCategory(false);
+    setCustomCategory("");
     setIsModalOpen(true);
   };
 
@@ -217,18 +237,21 @@ export default function ProductsPage() {
 
   return (
     <div className="p-8">
-      {" "}
       {/* Breadcrumb */}
       <div className="mb-6">
         <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink href="/admin/dashboard">
+          <BreadcrumbList className="flex items-center">
+            <BreadcrumbItem className="flex items-center">
+              <BreadcrumbLink
+                href="/admin/dashboard"
+                className="flex items-center gap-2"
+              >
                 <LayoutDashboard className="h-4 w-4" />
+                <span>Dashboard</span>
               </BreadcrumbLink>
             </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
+            <BreadcrumbSeparator className="flex items-center" />
+            <BreadcrumbItem className="flex items-center">
               <BreadcrumbPage className="font-semibold">
                 Products
               </BreadcrumbPage>
@@ -440,16 +463,98 @@ export default function ProductsPage() {
               step="0.01"
             />
 
-            <Input
-              label="Category"
-              placeholder="e.g. Cakes"
-              value={formData.category}
-              onChange={(e) =>
-                setFormData({ ...formData, category: e.target.value })
-              }
-              required
-              disabled={isSubmitting}
-            />
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Category <span className="text-red-500">*</span>
+              </label>
+
+              {!isAddingNewCategory ? (
+                <Select
+                  value={formData.category}
+                  onValueChange={(value) => {
+                    if (value === "__add_new__") {
+                      setIsAddingNewCategory(true);
+                    } else {
+                      setFormData({ ...formData, category: value });
+                    }
+                  }}
+                  disabled={isSubmitting}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select a category..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {existingCategories.map((cat) => (
+                      <SelectItem key={cat} value={cat}>
+                        {cat}
+                      </SelectItem>
+                    ))}
+                    {existingCategories.length > 0 && <SelectSeparator />}
+                    <SelectItem value="__add_new__">
+                      + Add New Category
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              ) : (
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Enter new category name"
+                    value={customCategory}
+                    onChange={(e) => setCustomCategory(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && customCategory.trim()) {
+                        e.preventDefault();
+                        setFormData({
+                          ...formData,
+                          category: customCategory.trim(),
+                        });
+                        setIsAddingNewCategory(false);
+                        setCustomCategory("");
+                      }
+                    }}
+                    disabled={isSubmitting}
+                    className="flex-1"
+                    autoFocus
+                  />
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      if (customCategory.trim()) {
+                        setFormData({
+                          ...formData,
+                          category: customCategory.trim(),
+                        });
+                        setIsAddingNewCategory(false);
+                        setCustomCategory("");
+                      }
+                    }}
+                    disabled={!customCategory.trim() || isSubmitting}
+                    className="shrink-0"
+                  >
+                    <CheckCircle2 className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setIsAddingNewCategory(false);
+                      setCustomCategory("");
+                    }}
+                    disabled={isSubmitting}
+                    className="shrink-0"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              )}
+
+              {formData.category && !isAddingNewCategory && (
+                <p className="text-xs text-gray-500">
+                  Selected:{" "}
+                  <span className="font-medium">{formData.category}</span>
+                </p>
+              )}
+            </div>
           </div>
 
           <div>
