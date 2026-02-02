@@ -26,41 +26,20 @@ function HeroSection() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const heroImages = useQuery(api.gallery.getGalleryImages, { type: "hero" });
 
-  const defaultSlides = [
-    {
-      image:
-        "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=1920&q=80",
-      alt: "Jollof Rice",
-    },
-    {
-      image:
-        "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=1920&q=80",
-      alt: "Custom Cakes",
-    },
-    {
-      image:
-        "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=1920&q=80",
-      alt: "Fresh Pastries",
-    },
-    {
-      image:
-        "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=1920&q=80",
-      alt: "Party Platter",
-    },
-  ];
-
-  // Use hero images if available, otherwise use defaults
+  // Use hero images if available
   const slides =
     heroImages && heroImages.length > 0
       ? heroImages.map((img) => ({ image: img.url, alt: img.alt }))
-      : defaultSlides;
+      : [];
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % slides.length);
-    }, 5000);
-    return () => clearInterval(timer);
-  }, []);
+    if (slides.length > 0) {
+      const timer = setInterval(() => {
+        setCurrentSlide((prev) => (prev + 1) % slides.length);
+      }, 5000);
+      return () => clearInterval(timer);
+    }
+  }, [slides.length]);
 
   const nextSlide = () => {
     setCurrentSlide((prev) => (prev + 1) % slides.length);
@@ -72,6 +51,23 @@ function HeroSection() {
 
   return (
     <section className="relative h-[70vh] sm:h-[80vh] lg:h-screen overflow-hidden">
+      {/* Loading State */}
+      {heroImages === undefined && (
+        <div className="absolute inset-0 bg-charcoal-black/90 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-honey-gold mx-auto mb-4"></div>
+            <p className="text-white/70">Loading hero images...</p>
+          </div>
+        </div>
+      )}
+
+      {/* No Images State */}
+      {heroImages !== undefined && slides.length === 0 && (
+        <div className="absolute inset-0 bg-linear-to-br from-charcoal-black to-gray-900">
+          <div className="absolute inset-0 bg-charcoal-black/60" />
+        </div>
+      )}
+
       {/* Background Slider */}
       {slides.map((slide, index) => (
         <div
@@ -349,9 +345,8 @@ function HowItWorks() {
 // About Section with Image
 // Welcome to Honey Foods Section
 function AboutSection() {
-  const [aboutImage, setAboutImage] = useState(
-    "https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=1200&q=80",
-  );
+  const [aboutImage, setAboutImage] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     fetch("/api/settings")
@@ -360,8 +355,12 @@ function AboutSection() {
         if (data.aboutUsImage) {
           setAboutImage(data.aboutUsImage);
         }
+        setIsLoading(false);
       })
-      .catch((err) => console.error("Error fetching settings:", err));
+      .catch((err) => {
+        console.error("Error fetching settings:", err);
+        setIsLoading(false);
+      });
   }, []);
 
   return (
@@ -369,12 +368,27 @@ function AboutSection() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-12">
         <div className="flex flex-col lg:flex-row items-center gap-10 lg:gap-16 max-w-7xl mx-auto">
           <FadeIn className="lg:w-1/2 w-full">
-            <div className="relative aspect-4/3 rounded-3xl overflow-hidden shadow-2xl">
-              <img
-                src={aboutImage}
-                alt="About Honey Foods"
-                className="w-full h-full object-cover"
-              />
+            <div className="relative aspect-4/3 rounded-3xl overflow-hidden shadow-2xl bg-gray-200">
+              {isLoading ? (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-honey-gold mx-auto mb-3"></div>
+                    <p className="text-gray-500 text-sm">Loading image...</p>
+                  </div>
+                </div>
+              ) : aboutImage ? (
+                <img
+                  src={aboutImage}
+                  alt="About Honey Foods"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="absolute inset-0 bg-linear-to-br from-gray-300 to-gray-400 flex items-center justify-center">
+                  <p className="text-gray-600 text-center px-4">
+                    No about image uploaded
+                  </p>
+                </div>
+              )}
             </div>
           </FadeIn>
 
