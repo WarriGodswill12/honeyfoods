@@ -415,8 +415,9 @@ function AboutSection() {
 // Gallery Section with Auto-Sliding Slideshow
 function GallerySection() {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const featuredGallery = useQuery(api.gallery.getFeaturedGalleryImages);
 
-  const galleryImages = [
+  const defaultImages = [
     {
       id: 1,
       url: "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=1920&q=80",
@@ -448,6 +449,18 @@ function GallerySection() {
       alt: "Elegant Wedding Cake",
     },
   ];
+
+  // Use featured gallery images if available, otherwise use defaults
+  const galleryImages =
+    featuredGallery && featuredGallery.length > 0
+      ? featuredGallery
+          .filter((img) => img.type === "gallery")
+          .map((img) => ({
+            id: img._id,
+            url: img.url,
+            alt: img.alt,
+          }))
+      : defaultImages;
 
   useEffect(() => {
     const timer = setInterval(() => {

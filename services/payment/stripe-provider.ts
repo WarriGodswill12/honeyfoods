@@ -23,10 +23,8 @@ export class StripeProvider implements PaymentProvider {
     const paymentIntent = await stripe.paymentIntents.create({
       amount: params.amount,
       currency: params.currency,
-      // Let Stripe surface all eligible methods (Apple Pay, Google Pay, etc.)
-      automatic_payment_methods: {
-        enabled: true,
-      },
+      // Only allow cards (includes Apple Pay and Google Pay)
+      payment_method_types: ["card"],
       receipt_email: params.customerEmail,
       metadata: {
         orderId: params.orderId,
