@@ -126,7 +126,7 @@ export default function ProductsPage() {
       images: [],
       imagePublicIds: [],
       featured: false,
-      available: true,
+      available: true, // Default to shop product
     });
     setError("");
     setIsAddingNewCategory(false);
@@ -687,32 +687,73 @@ export default function ProductsPage() {
             )}
           </div>
 
-          <div className="flex gap-6">
-            <label className="flex items-center gap-3">
-              <input
-                type="checkbox"
-                checked={formData.featured}
-                onChange={(e) =>
-                  setFormData({ ...formData, featured: e.target.checked })
-                }
-                disabled={isSubmitting}
-                className="h-5 w-5 rounded border-gray-300 text-honey-gold focus:ring-honey-gold"
-              />
-              <span className="text-sm text-gray-700">Featured Product</span>
-            </label>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between py-3 px-4 border border-gray-200 rounded-lg">
+              <div>
+                <h4 className="font-semibold text-gray-900">
+                  Product Visibility
+                </h4>
+                <p className="text-sm text-gray-500">
+                  Choose where this product will appear
+                </p>
+              </div>
+            </div>
 
-            <label className="flex items-center gap-3">
-              <input
-                type="checkbox"
-                checked={formData.available}
-                onChange={(e) =>
-                  setFormData({ ...formData, available: e.target.checked })
-                }
-                disabled={isSubmitting}
-                className="h-5 w-5 rounded border-gray-300 text-honey-gold focus:ring-honey-gold"
-              />
-              <span className="text-sm text-gray-700">Available</span>
-            </label>
+            <div className="space-y-3">
+              <label className="flex items-start gap-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+                <input
+                  type="radio"
+                  name="productType"
+                  checked={formData.featured && !formData.available}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setFormData({
+                        ...formData,
+                        featured: true,
+                        available: false,
+                      });
+                    }
+                  }}
+                  disabled={isSubmitting}
+                  className="mt-0.5 h-4 w-4 text-honey-gold focus:ring-honey-gold"
+                />
+                <div>
+                  <span className="text-sm font-medium text-gray-700">
+                    Featured Product
+                  </span>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Will appear in the "Our Menu" section on homepage only
+                  </p>
+                </div>
+              </label>
+
+              <label className="flex items-start gap-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+                <input
+                  type="radio"
+                  name="productType"
+                  checked={formData.available && !formData.featured}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setFormData({
+                        ...formData,
+                        available: true,
+                        featured: false,
+                      });
+                    }
+                  }}
+                  disabled={isSubmitting}
+                  className="mt-0.5 h-4 w-4 text-honey-gold focus:ring-honey-gold"
+                />
+                <div>
+                  <span className="text-sm font-medium text-gray-700">
+                    Shop Product
+                  </span>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Will appear in the shop page for customers to purchase
+                  </p>
+                </div>
+              </label>
+            </div>
           </div>
 
           <div className="flex gap-3 pt-4">

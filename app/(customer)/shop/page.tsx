@@ -51,7 +51,7 @@ function ShopPageContent() {
   // Get available products
   const products = useMemo(() => {
     if (!allProducts) return [];
-    return allProducts.filter((p) => p.available);
+    return allProducts.filter((p) => p.available && !p.featured);
   }, [allProducts]);
 
   // Get unique categories

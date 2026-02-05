@@ -119,7 +119,7 @@ function CategoriesSection() {
 
   // Get featured products only, limit to 6
   const featuredProducts = allProducts
-    ? allProducts.filter((p) => p.available && p.featured).slice(0, 6)
+    ? allProducts.filter((p) => p.featured && !p.available).slice(0, 6)
     : [];
 
   // Don't render section if no featured products
