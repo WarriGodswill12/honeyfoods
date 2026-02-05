@@ -20,7 +20,6 @@ if (!CONVEX_URL) {
 }
 
 const client = new ConvexHttpClient(CONVEX_URL);
-
 async function listOrders() {
   console.log("🔍 Fetching all orders...\n");
 

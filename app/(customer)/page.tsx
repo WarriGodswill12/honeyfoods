@@ -112,32 +112,20 @@ function HeroSection() {
   );
 }
 
-// Categories Section
-// Our Menu Section
+// Our Menu Section with Featured Products
 function CategoriesSection() {
-  const categories = [
-    {
-      name: "Nigerian Foods",
-      description: "Authentic West African flavors",
-      image:
-        "https://images.unsplash.com/photo-1516684732162-798a0062be99?w=800&q=80",
-      href: "/shop?category=Nigerian%20Foods",
-    },
-    {
-      name: "Pastries",
-      description: "Freshly baked daily",
-      image:
-        "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=800&q=80",
-      href: "/shop?category=Pastries",
-    },
-    {
-      name: "Cakes",
-      description: "Custom made for your special moments",
-      image:
-        "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=800&q=80",
-      href: "/shop?category=Cakes",
-    },
-  ];
+  const allProducts = useQuery(api.products.getProducts, {});
+  const { addItem } = useCart();
+
+  // Get featured products only, limit to 6
+  const featuredProducts = allProducts
+    ? allProducts.filter((p) => p.available && p.featured).slice(0, 6)
+    : [];
+
+  // Don't render section if no featured products
+  if (featuredProducts.length === 0) {
+    return null;
+  }
 
   return (
     <section className="py-16 sm:py-20 lg:py-24 bg-linear-to-b from-white to-gray-50">
@@ -152,28 +140,30 @@ function CategoriesSection() {
         </FadeIn>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 max-w-6xl mx-auto">
-          {categories.map((category, index) => (
-            <StaggerChildren key={category.name} delay={index * 0.1}>
-              <Link href={category.href}>
+          {featuredProducts.map((product, index) => (
+            <StaggerChildren key={product._id} delay={index * 0.1}>
+              <Link
+                href={`/shop?category=${encodeURIComponent(product.category || "")}`}
+              >
                 <div className="group relative overflow-hidden rounded-3xl aspect-4/5 shadow-xl hover:shadow-2xl transition-all duration-500">
                   <img
-                    src={category.image}
-                    alt={category.name}
+                    src={product.image || "/images/placeholder-product.svg"}
+                    alt={product.name}
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                   />
                   <div className="absolute inset-0 bg-linear-to-t from-charcoal-black via-charcoal-black/40 to-transparent" />
                   <div className="absolute inset-0 flex flex-col justify-end p-6 sm:p-8">
                     <h3 className="font-heading text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-2">
-                      {category.name}
+                      {product.name}
                     </h3>
                     <p className="text-white/90 text-sm sm:text-base mb-4">
-                      {category.description}
+                      {product.description || "Delicious homemade food"}
                     </p>
                     <Button
                       variant="outline"
                       className="w-full bg-white/10 border-white/30 text-white hover:bg-white hover:text-charcoal-black backdrop-blur-sm font-semibold"
                     >
-                      Explore {category.name}
+                      Explore {product.name}
                     </Button>
                   </div>
                 </div>
