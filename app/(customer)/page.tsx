@@ -335,23 +335,7 @@ function HowItWorks() {
 // About Section with Image
 // Welcome to Honey Foods Section
 function AboutSection() {
-  const [aboutImage, setAboutImage] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    fetch("/api/settings")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.aboutUsImage) {
-          setAboutImage(data.aboutUsImage);
-        }
-        setIsLoading(false);
-      })
-      .catch((err) => {
-        console.error("Error fetching settings:", err);
-        setIsLoading(false);
-      });
-  }, []);
+  const settings = useQuery(api.settings.getSettings);
 
   return (
     <section className="py-16 sm:py-20 lg:py-24 bg-white">
@@ -359,18 +343,27 @@ function AboutSection() {
         <div className="flex flex-col lg:flex-row items-center gap-10 lg:gap-16 max-w-7xl mx-auto">
           <FadeIn className="lg:w-1/2 w-full">
             <div className="relative aspect-4/3 rounded-3xl overflow-hidden shadow-2xl bg-gray-200">
-              {isLoading ? (
+              {settings === undefined ? (
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="text-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-honey-gold mx-auto mb-3"></div>
                     <p className="text-gray-500 text-sm">Loading image...</p>
                   </div>
                 </div>
-              ) : aboutImage ? (
+              ) : settings?.aboutUsImage ? (
                 <img
-                  src={aboutImage}
+                  src={settings.aboutUsImage}
                   alt="About Honey Foods"
                   className="w-full h-full object-cover"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src =
+                      "https://via.placeholder.com/800x600/e5e7eb/6b7280?text=Image+Not+Found";
+                    console.error(
+                      "Failed to load about us image:",
+                      settings.aboutUsImage,
+                    );
+                  }}
                 />
               ) : (
                 <div className="absolute inset-0 bg-linear-to-br from-gray-300 to-gray-400 flex items-center justify-center">

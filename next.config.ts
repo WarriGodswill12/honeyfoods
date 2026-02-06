@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
     domains: [
       "res.cloudinary.com",
       "images.unsplash.com",
-      "cool-wolverine-454.convex.cloud",
+      "frugal-camel-111.convex.cloud",
     ],
     remotePatterns: [
       {
@@ -20,7 +20,7 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
-        hostname: "cool-wolverine-454.convex.cloud",
+        hostname: "frugal-camel-111.convex.cloud",
         pathname: "/api/storage/**",
       },
     ],

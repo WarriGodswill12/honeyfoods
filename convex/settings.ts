@@ -42,8 +42,12 @@ export const getSettings = query({
     }
 
     if (settings.aboutUsImageStorageId) {
-      const url = await ctx.storage.getUrl(settings.aboutUsImageStorageId);
-      if (url) aboutUsImage = url;
+      try {
+        const url = await ctx.storage.getUrl(settings.aboutUsImageStorageId);
+        if (url) aboutUsImage = url;
+      } catch (error) {
+        console.error("Error fetching about us image URL:", error);
+      }
     }
 
     return {
