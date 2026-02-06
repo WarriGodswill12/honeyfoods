@@ -8,12 +8,12 @@ import { Button } from "@/components/ui/button";
 import { FadeIn, StaggerChildren } from "@/components/shared/animated";
 
 export default function GalleryPage() {
-  const allImages = useQuery(api.gallery.getFeaturedGalleryImages);
+  const allImages = useQuery(api.gallery.getGalleryImages, { type: "gallery" });
   type GalleryImageType = NonNullable<typeof allImages>[number];
   const [selected, setSelected] = useState<GalleryImageType | null>(null);
 
-  // Filter only gallery type images (not hero)
-  const images = allImages?.filter((img) => img.type === "gallery") || [];
+  // Use all gallery images
+  const images = allImages || [];
 
   // Find index of selected image
   const selectedIndex = selected
@@ -79,6 +79,11 @@ export default function GalleryPage() {
                 alt={img.alt}
                 fill
                 className="object-cover group-hover:scale-105 transition-transform duration-500"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.src =
+                    "https://via.placeholder.com/400x400/e5e7eb/6b7280?text=Image+Not+Found";
+                }}
               />
               <div className="absolute inset-0 bg-linear-to-t from-charcoal-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
             </button>
@@ -135,6 +140,11 @@ export default function GalleryPage() {
               height={1080}
               className="w-full h-auto max-h-[80vh] sm:max-h-[90vh] rounded-xl object-contain"
               style={{ minHeight: "300px" }}
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src =
+                  "https://via.placeholder.com/800x600/e5e7eb/6b7280?text=Image+Not+Found";
+              }}
             />
             <Button
               variant="secondary"

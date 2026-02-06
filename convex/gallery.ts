@@ -25,15 +25,25 @@ export const getGalleryImages = query({
     // Fetch URLs from storage IDs
     const imagesWithUrls = await Promise.all(
       images.map(async (image) => {
-        if (image.storageId) {
-          const url = await ctx.storage.getUrl(image.storageId);
-          return { ...image, url: url || image.url };
+        try {
+          if (image.storageId) {
+            const url = await ctx.storage.getUrl(image.storageId);
+            return { ...image, url: url || image.url || "" };
+          }
+          return { ...image, url: image.url || "" };
+        } catch (error) {
+          console.error(
+            "Error fetching image URL for storageId:",
+            image.storageId,
+            error,
+          );
+          return { ...image, url: image.url || "" };
         }
-        return image;
       }),
     );
 
-    return imagesWithUrls;
+    // Filter out images with empty URLs
+    return imagesWithUrls.filter((img) => img.url && img.url.trim() !== "");
   },
 });
 
@@ -48,15 +58,25 @@ export const getFeaturedGalleryImages = query({
     // Fetch URLs from storage IDs
     const imagesWithUrls = await Promise.all(
       images.map(async (image) => {
-        if (image.storageId) {
-          const url = await ctx.storage.getUrl(image.storageId);
-          return { ...image, url: url || image.url };
+        try {
+          if (image.storageId) {
+            const url = await ctx.storage.getUrl(image.storageId);
+            return { ...image, url: url || image.url || "" };
+          }
+          return { ...image, url: image.url || "" };
+        } catch (error) {
+          console.error(
+            "Error fetching image URL for storageId:",
+            image.storageId,
+            error,
+          );
+          return { ...image, url: image.url || "" };
         }
-        return image;
       }),
     );
 
-    return imagesWithUrls;
+    // Filter out images with empty URLs
+    return imagesWithUrls.filter((img) => img.url && img.url.trim() !== "");
   },
 });
 
@@ -69,11 +89,20 @@ export const getGalleryImageById = query({
 
     // Fetch URL from storage ID if available
     if (image.storageId) {
-      const url = await ctx.storage.getUrl(image.storageId);
-      return { ...image, url: url || image.url };
+      try {
+        const url = await ctx.storage.getUrl(image.storageId);
+        return { ...image, url: url || image.url || "" };
+      } catch (error) {
+        console.error(
+          "Error fetching image URL for storageId:",
+          image.storageId,
+          error,
+        );
+        return { ...image, url: image.url || "" };
+      }
     }
 
-    return image;
+    return { ...image, url: image.url || "" };
   },
 });
 

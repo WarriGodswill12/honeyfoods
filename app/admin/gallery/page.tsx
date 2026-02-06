@@ -372,6 +372,17 @@ export default function GalleryManagement() {
                   src={image.url}
                   alt={image.alt}
                   className="w-full h-full object-cover"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src =
+                      "https://via.placeholder.com/800x450/e5e7eb/6b7280?text=Image+Not+Found";
+                    console.error(
+                      "Failed to load image:",
+                      image.url,
+                      "for image ID:",
+                      image._id,
+                    );
+                  }}
                 />
               </div>
               <div className="p-4 bg-white">
@@ -418,6 +429,17 @@ export default function GalleryManagement() {
                   src={image.url}
                   alt={image.alt}
                   className="w-full h-full object-cover"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src =
+                      "https://via.placeholder.com/400x400/e5e7eb/6b7280?text=Image+Not+Found";
+                    console.error(
+                      "Failed to load image:",
+                      image.url,
+                      "for image ID:",
+                      image._id,
+                    );
+                  }}
                 />
                 {image.featured && (
                   <div className="absolute top-2 left-2 bg-honey-gold text-white px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
