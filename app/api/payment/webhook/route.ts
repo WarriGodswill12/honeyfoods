@@ -39,14 +39,29 @@ export async function POST(request: NextRequest) {
     const stripeProvider = new StripeProvider();
     const result = await stripeProvider.handleWebhook(body, signature);
 
+    console.log("[Webhook] Processing event:", {
+      transactionId: result.transactionId,
+      status: result.status,
+      orderId: result.orderId,
+    });
+
     // Get payment record by Stripe ID
     const payment = await convexClient.query(
       api.payments.getPaymentByStripeId,
       { stripePaymentIntentId: result.transactionId },
     );
 
+    console.log("[Webhook] Payment record lookup:", {
+      transactionId: result.transactionId,
+      found: !!payment,
+      paymentId: payment?._id,
+    });
+
     if (!payment) {
-      console.error("Payment not found for transaction:", result.transactionId);
+      console.error(
+        "[Webhook] Payment not found for transaction:",
+        result.transactionId,
+      );
       return NextResponse.json({ received: true }); // Still return success to Stripe
     }
 
@@ -63,9 +78,15 @@ export async function POST(request: NextRequest) {
       convexClient.mutation(api.payments.updatePayment, {
         id: payment._id,
         status: result.status,
-        stripePaymentIntentId: result.transactionId,
+        providerPaymentId: result.transactionId,
       }),
     ]);
+
+    console.log("[Webhook] Successfully updated order and payment:", {
+      orderId: result.orderId,
+      paymentId: payment._id,
+      status: result.status,
+    });
 
     return NextResponse.json({ received: true });
   } catch (error: any) {

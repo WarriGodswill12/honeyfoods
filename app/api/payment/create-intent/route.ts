@@ -59,15 +59,38 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Store payment record
-    await convexClient.mutation(api.payments.createPayment, {
+    console.log("[Create Intent] Stripe payment intent created:", {
+      paymentIntentId: paymentIntent.id,
       orderId: order._id,
+      orderNumber: order.orderNumber,
       amount: order.total,
-      currency: "GBP",
-      provider: "stripe",
-      providerPaymentId: paymentIntent.id,
-      status: "PENDING",
     });
+
+    // Store payment record
+    let paymentId;
+    try {
+      paymentId = await convexClient.mutation(api.payments.createPayment, {
+        orderId: order._id,
+        amount: order.total,
+        currency: "GBP",
+        provider: "stripe",
+        providerPaymentId: paymentIntent.id,
+        status: "PENDING",
+      });
+
+      console.log("[Create Intent] Payment record created:", {
+        paymentId,
+        providerPaymentId: paymentIntent.id,
+        orderId: order._id,
+      });
+    } catch (dbError: any) {
+      console.error("[Create Intent] Failed to create payment record:", {
+        error: dbError.message,
+        paymentIntentId: paymentIntent.id,
+        orderId: order._id,
+      });
+      throw new Error("Failed to save payment record: " + dbError.message);
+    }
 
     return NextResponse.json({
       clientSecret: paymentIntent.clientSecret,

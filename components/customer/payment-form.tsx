@@ -47,7 +47,8 @@ export function PaymentForm({ orderId, onSuccess, onError }: PaymentFormProps) {
     e.preventDefault();
 
     if (!stripe || !elements) {
-      const errorMsg = "Payment system is not ready. Please refresh the page and try again.";
+      const errorMsg =
+        "Payment system is not ready. Please refresh the page and try again.";
       setMessage(errorMsg);
       onError(errorMsg);
       return;
@@ -65,7 +66,7 @@ export function PaymentForm({ orderId, onSuccess, onError }: PaymentFormProps) {
     try {
       // Submit the form to ensure all fields are filled
       const { error: submitError } = await elements.submit();
-      
+
       if (submitError) {
         setMessage(submitError.message || "Please check your payment details");
         onError(submitError.message || "Payment validation failed");
@@ -98,7 +99,13 @@ export function PaymentForm({ orderId, onSuccess, onError }: PaymentFormProps) {
         if (verifyData.verified) {
           onSuccess(orderId);
         } else {
-          onError("Payment verification failed");
+          // Show the actual error message from the server
+          const errorMessage =
+            verifyData.error ||
+            verifyData.message ||
+            "Payment verification failed. Please contact support.";
+          console.error("Verification failed:", verifyData);
+          onError(errorMessage);
         }
       }
     } catch (err: any) {
@@ -117,7 +124,7 @@ export function PaymentForm({ orderId, onSuccess, onError }: PaymentFormProps) {
           <span className="ml-2 text-gray-600">Loading payment form...</span>
         </div>
       )}
-      
+
       <PaymentElement
         onReady={() => setIsReady(true)}
         options={{

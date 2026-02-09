@@ -53,7 +53,7 @@ export const createPayment = mutation({
     amount: v.number(),
     currency: v.string(),
     provider: v.string(),
-    providerPaymentId: v.optional(v.string()),
+    providerPaymentId: v.string(), // Required for payment lookup
     providerMetadata: v.optional(v.any()),
     status: v.union(
       v.literal("PENDING"),
@@ -108,7 +108,6 @@ export const updatePayment = mutation({
         v.literal("REFUNDED"),
       ),
     ),
-    stripePaymentIntentId: v.optional(v.string()),
     providerPaymentId: v.optional(v.string()),
     providerMetadata: v.optional(v.any()),
   },

@@ -30,6 +30,12 @@ export async function POST(request: NextRequest) {
     const stripeProvider = new StripeProvider();
     const verification = await stripeProvider.verifyPayment(paymentIntentId);
 
+    console.log("[Verify] Payment verification result:", {
+      paymentIntentId,
+      verified: verification.verified,
+      status: verification.status,
+    });
+
     if (verification.verified) {
       // Get payment record
       const payment = await convexClient.query(
@@ -37,9 +43,24 @@ export async function POST(request: NextRequest) {
         { stripePaymentIntentId: paymentIntentId },
       );
 
+      console.log("[Verify] Payment record lookup:", {
+        paymentIntentId,
+        found: !!payment,
+        paymentId: payment?._id,
+      });
+
       if (!payment) {
+        console.error(
+          "[Verify] Payment record not found for intent:",
+          paymentIntentId,
+        );
         return NextResponse.json(
-          { error: "Payment record not found" },
+          {
+            error:
+              "Payment record not found in database. Your payment was successful but we couldn't locate the order. Please contact support with this payment ID: " +
+              paymentIntentId,
+            paymentIntentId,
+          },
           { status: 404 },
         );
       }
@@ -49,8 +70,20 @@ export async function POST(request: NextRequest) {
         id: payment.orderId,
       });
 
+      console.log("[Verify] Order lookup:", {
+        orderId: payment.orderId,
+        found: !!order,
+        orderNumber: order?.orderNumber,
+      });
+
       if (!order) {
-        return NextResponse.json({ error: "Order not found" }, { status: 404 });
+        console.error("[Verify] Order not found:", payment.orderId);
+        return NextResponse.json(
+          {
+            error: "Order not found. Please contact support.",
+          },
+          { status: 404 },
+        );
       }
 
       // Update order and payment status
@@ -66,7 +99,7 @@ export async function POST(request: NextRequest) {
         convexClient.mutation(api.payments.updatePayment, {
           id: payment._id,
           status: "PAID",
-          stripePaymentIntentId: verification.transactionId!,
+          providerPaymentId: verification.transactionId!,
         }),
       ]);
 
@@ -78,10 +111,16 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    console.log("[Verify] Payment not yet completed:", {
+      paymentIntentId,
+      status: verification.status,
+    });
+
     return NextResponse.json({
       success: false,
       verified: false,
-      message: "Payment not yet completed",
+      message:
+        "Payment not yet completed. Current status: " + verification.status,
     });
   } catch (error: any) {
     console.error("Error verifying payment:", error);

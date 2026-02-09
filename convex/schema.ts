@@ -88,7 +88,7 @@ export default defineSchema({
     amount: v.number(), // in pounds (decimal)
     currency: v.string(),
     provider: v.string(), // 'stripe', 'paystack', 'applepay'
-    providerPaymentId: v.optional(v.string()),
+    providerPaymentId: v.string(), // Required - payment intent ID from provider
     providerMetadata: v.optional(v.any()), // JSON data
     status: v.union(
       v.literal("PENDING"),
