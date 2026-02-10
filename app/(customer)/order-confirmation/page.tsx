@@ -27,6 +27,7 @@ interface OrderItem {
   quantity: number;
   subtotal: number;
   image: string;
+  selectedFlavor?: string;
 }
 
 interface OrderDetails {
@@ -54,7 +55,7 @@ function OrderConfirmationContent() {
   const orderId = searchParams.get("orderId");
   const paymentIntent = searchParams.get("payment_intent");
   const paymentIntentClientSecret = searchParams.get(
-    "payment_intent_client_secret"
+    "payment_intent_client_secret",
   );
   const redirectStatus = searchParams.get("redirect_status");
 
@@ -97,7 +98,7 @@ function OrderConfirmationContent() {
           data.paymentStatus !== "succeeded"
         ) {
           setError(
-            "Payment not completed. Please complete your payment to view order details."
+            "Payment not completed. Please complete your payment to view order details.",
           );
           return;
         }
@@ -215,14 +216,19 @@ function OrderConfirmationContent() {
               </div>
             </div>
             <h1 className="text-2xl md:text-3xl font-bold text-charcoal-black mb-2">
-              {order.paymentStatus === "PAID"
-                ? "Payment Successful!"
-                : "Order Confirmed!"}
+              Thank You for Your Order!
             </h1>
-            <p className="text-gray-600 mb-4">
-              Thank you for your order. We've received your payment and will
-              start preparing your items.
+            <p className="text-gray-600 mb-2">
+              Your payment has been processed successfully.
             </p>
+            {order.customerEmail && (
+              <p className="text-gray-600 mb-4">
+                We have sent your full order receipt to{" "}
+                <span className="font-semibold text-honey-gold">
+                  {order.customerEmail}
+                </span>
+              </p>
+            )}
             <div className="bg-honey-gold/10 rounded-lg p-4 inline-block">
               <p className="text-sm text-gray-600">Order Number</p>
               <p className="text-xl md:text-2xl font-bold text-honey-gold">
@@ -263,8 +269,8 @@ function OrderConfirmationContent() {
                     order.paymentStatus === "PAID"
                       ? "bg-green-100 text-green-800"
                       : order.paymentStatus === "PENDING"
-                      ? "bg-orange-100 text-orange-800"
-                      : "bg-red-100 text-red-800"
+                        ? "bg-orange-100 text-orange-800"
+                        : "bg-red-100 text-red-800"
                   }`}
                 >
                   {order.paymentStatus}
@@ -316,6 +322,11 @@ function OrderConfirmationContent() {
                     <h3 className="font-medium text-charcoal-black truncate">
                       {item.name}
                     </h3>
+                    {item.selectedFlavor && (
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        Flavor: {item.selectedFlavor}
+                      </p>
+                    )}
                     <p className="text-sm text-gray-600">
                       Quantity: {item.quantity}
                     </p>

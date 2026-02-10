@@ -39,6 +39,7 @@ import {
   Trash,
   LayoutDashboard,
   CheckCircle2,
+  X,
 } from "lucide-react";
 import {
   Select,
@@ -70,6 +71,7 @@ export default function ProductsPage() {
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isAddingNewCategory, setIsAddingNewCategory] = useState(false);
   const [customCategory, setCustomCategory] = useState("");
+  const [newFlavor, setNewFlavor] = useState("");
 
   // Get products and filter them
   const products = allProducts || [];
@@ -101,6 +103,7 @@ export default function ProductsPage() {
     imagePublicIds: [] as string[],
     featured: false,
     available: true,
+    flavors: [] as string[],
   });
 
   // Check if form is valid for submission
@@ -127,6 +130,7 @@ export default function ProductsPage() {
       imagePublicIds: [],
       featured: false,
       available: true, // Default to shop product
+      flavors: [],
     });
     setError("");
     setIsAddingNewCategory(false);
@@ -146,6 +150,7 @@ export default function ProductsPage() {
       imagePublicIds: product.imagePublicIds || [],
       featured: product.featured,
       available: product.available,
+      flavors: product.flavors || [],
     });
     setError("");
     setIsModalOpen(true);
@@ -174,6 +179,7 @@ export default function ProductsPage() {
             : undefined,
         featured: formData.featured,
         available: formData.available,
+        flavors: formData.flavors.length > 0 ? formData.flavors : undefined,
       };
 
       if (editingProduct) {
@@ -753,6 +759,104 @@ export default function ProductsPage() {
                   </p>
                 </div>
               </label>
+            </div>
+          </div>
+
+          {/* Flavor Options */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between py-3 px-4 border border-gray-200 rounded-lg">
+              <div>
+                <h4 className="font-semibold text-gray-900">
+                  Flavor Options (Optional)
+                </h4>
+                <p className="text-sm text-gray-500">
+                  Add flavors for products like cakes, drinks, etc.
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex gap-2">
+                <Input
+                  placeholder="e.g., Chocolate, Vanilla, Strawberry"
+                  value={newFlavor}
+                  onChange={(e) => setNewFlavor(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && newFlavor.trim()) {
+                      e.preventDefault();
+                      if (!formData.flavors.includes(newFlavor.trim())) {
+                        setFormData({
+                          ...formData,
+                          flavors: [...formData.flavors, newFlavor.trim()],
+                        });
+                      }
+                      setNewFlavor("");
+                    }
+                  }}
+                  disabled={isSubmitting}
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  onClick={() => {
+                    if (
+                      newFlavor.trim() &&
+                      !formData.flavors.includes(newFlavor.trim())
+                    ) {
+                      setFormData({
+                        ...formData,
+                        flavors: [...formData.flavors, newFlavor.trim()],
+                      });
+                      setNewFlavor("");
+                    }
+                  }}
+                  disabled={
+                    !newFlavor.trim() ||
+                    isSubmitting ||
+                    formData.flavors.includes(newFlavor.trim())
+                  }
+                  className="shrink-0"
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add
+                </Button>
+              </div>
+
+              {formData.flavors.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {formData.flavors.map((flavor, index) => (
+                    <Badge
+                      key={index}
+                      variant="secondary"
+                      className="pl-3 pr-1 py-1 gap-1"
+                    >
+                      {flavor}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFormData({
+                            ...formData,
+                            flavors: formData.flavors.filter(
+                              (_, i) => i !== index,
+                            ),
+                          });
+                        }}
+                        disabled={isSubmitting}
+                        className="ml-1 rounded-full hover:bg-red-100 p-0.5"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
+
+              {formData.flavors.length === 0 && (
+                <p className="text-xs text-gray-500">
+                  No flavors added. Customers won't see flavor selection for
+                  this product.
+                </p>
+              )}
             </div>
           </div>
 

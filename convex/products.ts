@@ -69,6 +69,7 @@ export const createProduct = mutation({
     available: v.boolean(),
     featured: v.boolean(),
     category: v.optional(v.string()),
+    flavors: v.optional(v.array(v.string())),
   },
   handler: async (ctx, args) => {
     // Check if slug already exists
@@ -107,6 +108,7 @@ export const updateProduct = mutation({
     available: v.optional(v.boolean()),
     featured: v.optional(v.boolean()),
     category: v.optional(v.string()),
+    flavors: v.optional(v.array(v.string())),
   },
   handler: async (ctx, args) => {
     const { id, ...updates } = args;

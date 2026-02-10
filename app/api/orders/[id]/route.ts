@@ -48,6 +48,7 @@ export async function GET(
         quantity: item.quantity,
         subtotal: item.subtotal,
         image: "",
+        selectedFlavor: item.selectedFlavor || undefined,
       })),
       subtotal: order.subtotal,
       deliveryFee: order.deliveryFee,

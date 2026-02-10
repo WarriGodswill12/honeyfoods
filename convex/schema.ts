@@ -29,6 +29,7 @@ export default defineSchema({
     available: v.boolean(),
     featured: v.boolean(),
     category: v.optional(v.string()),
+    flavors: v.optional(v.array(v.string())), // Array of available flavors for this product
     createdAt: v.number(),
     updatedAt: v.number(),
   })
@@ -78,6 +79,7 @@ export default defineSchema({
     price: v.number(), // Snapshot of price at time of order (in pounds)
     quantity: v.number(),
     subtotal: v.number(), // in pounds (decimal)
+    selectedFlavor: v.optional(v.string()), // Selected flavor for this item
   })
     .index("by_order", ["orderId"])
     .index("by_product", ["productId"]),

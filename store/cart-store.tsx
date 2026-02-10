@@ -11,6 +11,7 @@ export interface CartItem {
   imageUrl: string;
   quantity: number;
   note?: string; // Optional custom note for the item
+  flavor?: string; // Selected flavor for products that have flavor options
 }
 
 interface CartContextType {
@@ -52,14 +53,16 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const addItem = (product: Omit<CartItem, "quantity">, quantity = 1) => {
     setItems((prevItems) => {
       const existingItem = prevItems.find(
-        (item) => item.productId === product.productId
+        (item) =>
+          item.productId === product.productId &&
+          item.flavor === product.flavor, // Different flavors are treated as different items
       );
 
       if (existingItem) {
         return prevItems.map((item) =>
-          item.productId === product.productId
+          item.productId === product.productId && item.flavor === product.flavor
             ? { ...item, quantity: item.quantity + quantity }
-            : item
+            : item,
         );
       }
 
@@ -69,7 +72,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const removeItem = (productId: string) => {
     setItems((prevItems) =>
-      prevItems.filter((item) => item.productId !== productId)
+      prevItems.filter((item) => item.productId !== productId),
     );
   };
 
@@ -81,8 +84,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
     setItems((prevItems) =>
       prevItems.map((item) =>
-        item.productId === productId ? { ...item, quantity } : item
-      )
+        item.productId === productId ? { ...item, quantity } : item,
+      ),
     );
   };
 

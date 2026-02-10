@@ -44,6 +44,7 @@ export const createOrderItems = mutation({
         price: v.number(),
         quantity: v.number(),
         subtotal: v.number(),
+        selectedFlavor: v.optional(v.string()),
       }),
     ),
   },
@@ -57,6 +58,7 @@ export const createOrderItems = mutation({
         price: item.price,
         quantity: item.quantity,
         subtotal: item.subtotal,
+        selectedFlavor: item.selectedFlavor,
       });
       itemIds.push(id);
     }

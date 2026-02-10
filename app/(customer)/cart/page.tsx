@@ -116,6 +116,17 @@ export default function CartPage() {
                     <h3 className="font-semibold text-sm sm:text-base text-charcoal-black line-clamp-2">
                       {item.name}
                     </h3>
+                    {item.flavor && (
+                      <p className="mt-0.5 text-xs sm:text-sm text-gray-600">
+                        Flavor:{" "}
+                        <span className="font-medium">{item.flavor}</span>
+                      </p>
+                    )}
+                    {item.note && (
+                      <p className="mt-0.5 text-xs text-gray-500 italic line-clamp-1">
+                        Note: {item.note}
+                      </p>
+                    )}
                     <p className="mt-1 text-base sm:text-lg font-bold text-warm-orange">
                       £{item.price.toFixed(2)}
                     </p>

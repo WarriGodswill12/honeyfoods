@@ -51,6 +51,7 @@ export default function ProductDetailPage() {
   const allProducts = useQuery(api.products.getProducts, { available: true });
   const [quantity, setQuantity] = useState(1);
   const [customNote, setCustomNote] = useState("");
+  const [selectedFlavor, setSelectedFlavor] = useState<string>("");
   const [isAddingToCart, setIsAddingToCart] = useState(false);
 
   // Get available products
@@ -89,10 +90,21 @@ export default function ProductDetailPage() {
     if (allProducts && !product) {
       router.push("/shop");
     }
-  }, [allProducts, product, router]);
+    // Set default flavor when product changes or loads
+    if (product?.flavors && product.flavors.length > 0 && !selectedFlavor) {
+      setSelectedFlavor(product.flavors[0]);
+    }
+  }, [allProducts, product, router, selectedFlavor]);
 
   const handleAddToCart = () => {
     if (!product) return;
+
+    // Check if flavor is required but not selected
+    if (product.flavors && product.flavors.length > 0 && !selectedFlavor) {
+      alert("Please select a flavor");
+      return;
+    }
+
     setIsAddingToCart(true);
 
     addItem(
@@ -102,6 +114,7 @@ export default function ProductDetailPage() {
         price: product.price, // Now in pounds
         imageUrl: product.image,
         note: customNote || undefined,
+        flavor: selectedFlavor || undefined,
       },
       quantity,
     );
@@ -371,6 +384,31 @@ export default function ProductDetailPage() {
                 </div>
               </div>
             </div>
+
+            {/* Flavor Selector */}
+            {product.flavors && product.flavors.length > 0 && (
+              <div className="mb-6 pb-6 border-b border-gray-200">
+                <label className="block text-sm font-semibold text-charcoal-black mb-3">
+                  <Package className="inline h-4 w-4 text-honey-gold mr-2" />
+                  Select Flavor <span className="text-red-500">*</span>
+                </label>
+                <Select
+                  value={selectedFlavor}
+                  onValueChange={setSelectedFlavor}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Choose a flavor..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {product.flavors.map((flavor) => (
+                      <SelectItem key={flavor} value={flavor}>
+                        {flavor}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             {/* Quantity Selector */}
             <div className="mb-6">

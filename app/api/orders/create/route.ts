@@ -143,6 +143,7 @@ export async function POST(request: NextRequest) {
         quantity: item.quantity,
         price: priceInPounds,
         subtotal: itemSubtotal,
+        selectedFlavor: item.flavor || undefined, // Include selected flavor if provided
       });
     }
 

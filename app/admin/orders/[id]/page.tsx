@@ -28,6 +28,7 @@ interface OrderItem {
   price: number;
   subtotal: number;
   image: string;
+  selectedFlavor?: string;
 }
 
 interface Order {
@@ -243,6 +244,11 @@ export default function OrderDetailsPage() {
                             <h3 className="font-medium text-charcoal-black">
                               {item.name}
                             </h3>
+                            {item.selectedFlavor && (
+                              <p className="text-xs text-gray-500 mt-0.5">
+                                Flavor: {item.selectedFlavor}
+                              </p>
+                            )}
                           </div>
                         </div>
                       </td>
@@ -382,8 +388,8 @@ export default function OrderDetailsPage() {
                     order.paymentStatus === "PAID"
                       ? "bg-green-100 text-green-800"
                       : order.paymentStatus === "PENDING"
-                      ? "bg-orange-100 text-orange-800"
-                      : "bg-red-100 text-red-800"
+                        ? "bg-orange-100 text-orange-800"
+                        : "bg-red-100 text-red-800"
                   }`}
                 >
                   {order.paymentStatus}

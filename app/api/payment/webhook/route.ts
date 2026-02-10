@@ -4,6 +4,7 @@ import { StripeProvider } from "@/services/payment/stripe-provider";
 import { convexClient, api } from "@/lib/convex-server";
 import { rateLimit } from "@/lib/security";
 import { Id } from "@/convex/_generated/dataModel";
+import { sendOrderReceipt, sendAdminNotification } from "@/lib/email";
 
 export async function POST(request: NextRequest) {
   try {
@@ -87,6 +88,65 @@ export async function POST(request: NextRequest) {
       paymentId: payment._id,
       status: result.status,
     });
+
+    // Send emails if payment was successful
+    if (result.status === "PAID") {
+      try {
+        // Get full order details with items for email
+        const order = await convexClient.query(api.orders.getOrderById, {
+          id: result.orderId as Id<"orders">,
+        });
+
+        if (order) {
+          // Get order items
+          const orderItems = await convexClient.query(
+            api.orderItems.getOrderItems,
+            { orderId: result.orderId as Id<"orders"> },
+          );
+
+          const emailData = {
+            orderNumber: order.orderNumber,
+            customerName: order.customerName,
+            customerEmail: order.customerEmail || "",
+            customerPhone: order.customerPhone,
+            deliveryAddress: order.deliveryAddress,
+            customNote: order.customNote || undefined,
+            items: orderItems.map((item) => ({
+              name: item.name,
+              quantity: item.quantity,
+              price: item.price,
+              subtotal: item.subtotal,
+              flavor: item.selectedFlavor || undefined,
+            })),
+            subtotal: order.subtotal,
+            deliveryFee: order.deliveryFee,
+            total: order.total,
+            createdAt: new Date(order.createdAt).toISOString(),
+          };
+
+          // Send emails (don't block webhook response)
+          Promise.all([
+            sendOrderReceipt(emailData),
+            sendAdminNotification(emailData),
+          ])
+            .then(([customerSent, adminSent]) => {
+              console.log("[Webhook] Email notifications sent:", {
+                customerEmail: customerSent,
+                adminEmail: adminSent,
+              });
+            })
+            .catch((emailError) => {
+              console.error(
+                "[Webhook] Error sending email notifications:",
+                emailError,
+              );
+            });
+        }
+      } catch (emailError) {
+        console.error("[Webhook] Error preparing email:", emailError);
+        // Don't fail the webhook if email fails
+      }
+    }
 
     return NextResponse.json({ received: true });
   } catch (error: any) {
