@@ -120,7 +120,7 @@ export default function RootLayout({
         <ConvexClientProvider>
           <CartProvider>{children}</CartProvider>
         </ConvexClientProvider>
-        <Toaster position="top-right" richColors />
+        <Toaster position="bottom-center" richColors />
       </body>
     </html>
   );

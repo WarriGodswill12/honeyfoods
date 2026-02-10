@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
@@ -85,6 +86,9 @@ function ShopPageContent() {
       name: product.name,
       price: product.price, // Now in pounds
       imageUrl: product.image,
+    });
+    toast.success("Added to cart", {
+      description: `${product.name} x1`,
     });
   };
 
