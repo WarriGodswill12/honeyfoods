@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import { toast } from "sonner";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -121,7 +122,9 @@ export default function ProductDetailPage() {
 
     setTimeout(() => {
       setIsAddingToCart(false);
-      // Show success feedback
+      toast.success("Added to cart", {
+        description: `${product.name} ${selectedFlavor ? `(${selectedFlavor})` : ""} x${quantity}`,
+      });
     }, 300);
   };
 

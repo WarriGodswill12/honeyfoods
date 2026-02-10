@@ -1,5 +1,6 @@
 import { Header } from "@/components/customer/header";
 import { Footer } from "@/components/customer/footer";
+import { Toaster } from "@/components/ui/sonner";
 
 export default function CustomerLayout({
   children,
@@ -11,6 +12,7 @@ export default function CustomerLayout({
       <Header />
       <main className="flex-1">{children}</main>
       <Footer />
+      <Toaster position="bottom-center" />
     </div>
   );
 }
