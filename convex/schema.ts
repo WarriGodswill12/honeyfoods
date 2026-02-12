@@ -43,10 +43,11 @@ export default defineSchema({
     customerName: v.string(),
     customerEmail: v.optional(v.string()),
     customerPhone: v.string(),
-    deliveryAddress: v.string(),
+    deliveryMethod: v.union(v.literal("DELIVERY"), v.literal("PICKUP")), // Delivery method
+    deliveryAddress: v.string(), // For delivery orders or pickup location info
     customNote: v.optional(v.string()),
     subtotal: v.number(), // in pounds (decimal)
-    deliveryFee: v.number(), // in pounds (decimal)
+    deliveryFee: v.number(), // in pounds (decimal) - 0 for pickup
     total: v.number(), // in pounds (decimal)
     status: v.union(
       v.literal("PENDING"),
@@ -54,6 +55,8 @@ export default defineSchema({
       v.literal("PREPARING"),
       v.literal("OUT_FOR_DELIVERY"),
       v.literal("DELIVERED"),
+      v.literal("READY_FOR_PICKUP"), // New status for pickup orders
+      v.literal("PICKED_UP"), // New status when customer picks up
       v.literal("CANCELLED"),
     ),
     paymentStatus: v.union(
@@ -69,6 +72,7 @@ export default defineSchema({
     .index("by_orderNumber", ["orderNumber"])
     .index("by_status", ["status"])
     .index("by_paymentStatus", ["paymentStatus"])
+    .index("by_deliveryMethod", ["deliveryMethod"])
     .index("by_createdAt", ["createdAt"]),
 
   // Order Items table

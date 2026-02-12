@@ -6,12 +6,27 @@ import { sanitizeString } from "@/lib/sanitize";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { customerInfo, items, subtotal, deliveryFee, total } = body;
+    const {
+      customerInfo,
+      deliveryMethod,
+      items,
+      subtotal,
+      deliveryFee,
+      total,
+    } = body;
 
     // Comprehensive input validation
     if (!customerInfo || typeof customerInfo !== "object") {
       return NextResponse.json(
         { error: "Invalid customer information" },
+        { status: 400 },
+      );
+    }
+
+    // Validate delivery method
+    if (!deliveryMethod || !["DELIVERY", "PICKUP"].includes(deliveryMethod)) {
+      return NextResponse.json(
+        { error: "Invalid delivery method" },
         { status: 400 },
       );
     }
@@ -149,10 +164,13 @@ export async function POST(request: NextRequest) {
 
     // Fetch delivery fee from settings
     const settings = await convexClient.query(api.settings.getSettings, {});
+    // No delivery fee for pickup orders
     const calculatedDeliveryFee =
-      calculatedSubtotal >= (settings?.freeDeliveryThreshold || 100)
+      deliveryMethod === "PICKUP"
         ? 0
-        : settings?.deliveryFee || 5; // £5.00 (in pounds, not pence)
+        : calculatedSubtotal >= (settings?.freeDeliveryThreshold || 100)
+          ? 0
+          : settings?.deliveryFee || 5; // £5.00 (in pounds, not pence)
 
     const calculatedTotal = calculatedSubtotal + calculatedDeliveryFee;
 
@@ -186,7 +204,11 @@ export async function POST(request: NextRequest) {
       customerName: sanitizedInfo.fullName,
       customerEmail: sanitizedInfo.email,
       customerPhone: sanitizedInfo.phone,
-      deliveryAddress: `${sanitizedInfo.address}, ${sanitizedInfo.city}, ${sanitizedInfo.postcode}`,
+      deliveryMethod: deliveryMethod as "DELIVERY" | "PICKUP",
+      deliveryAddress:
+        deliveryMethod === "PICKUP"
+          ? "PICKUP - Customer will collect from store"
+          : `${sanitizedInfo.address}, ${sanitizedInfo.city}, ${sanitizedInfo.postcode}`,
       customNote: sanitizedInfo.deliveryNotes || undefined,
       subtotal: calculatedSubtotal,
       deliveryFee: calculatedDeliveryFee,

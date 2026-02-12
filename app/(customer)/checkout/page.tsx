@@ -37,6 +37,9 @@ export default function CheckoutPage() {
   const [orderId, setOrderId] = useState<string | null>(null);
 
   // Form state
+  const [deliveryMethod, setDeliveryMethod] = useState<"DELIVERY" | "PICKUP">(
+    "DELIVERY",
+  );
   const [customerInfo, setCustomerInfo] = useState({
     fullName: "",
     email: "",
@@ -52,10 +55,13 @@ export default function CheckoutPage() {
   // Cart total and settings are in pounds
   const subtotal = getTotalPrice();
   const freeThreshold = settings?.freeDeliveryThreshold ?? Infinity;
+  // No delivery fee for pickup orders
   const deliveryFee =
-    subtotal >= freeThreshold
+    deliveryMethod === "PICKUP"
       ? 0
-      : (settings?.deliveryFee ?? DEFAULT_DELIVERY_FEE);
+      : subtotal >= freeThreshold
+        ? 0
+        : (settings?.deliveryFee ?? DEFAULT_DELIVERY_FEE);
   const total = subtotal + deliveryFee;
 
   // Check if cart is empty
@@ -79,14 +85,17 @@ export default function CheckoutPage() {
     if (!customerInfo.phone.trim()) {
       newErrors.phone = "Phone number is required";
     }
-    if (!customerInfo.address.trim()) {
-      newErrors.address = "Delivery address is required";
-    }
-    if (!customerInfo.city.trim()) {
-      newErrors.city = "City is required";
-    }
-    if (!customerInfo.postcode.trim()) {
-      newErrors.postcode = "Postcode is required";
+    // Address is only required for delivery orders
+    if (deliveryMethod === "DELIVERY") {
+      if (!customerInfo.address.trim()) {
+        newErrors.address = "Delivery address is required";
+      }
+      if (!customerInfo.city.trim()) {
+        newErrors.city = "City is required";
+      }
+      if (!customerInfo.postcode.trim()) {
+        newErrors.postcode = "Postcode is required";
+      }
     }
 
     setErrors(newErrors);
@@ -118,11 +127,13 @@ export default function CheckoutPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           customerInfo,
+          deliveryMethod,
           items: items.map((item) => ({
             productId: item.productId,
             name: item.name,
             quantity: item.quantity,
             price: item.price, // In pounds
+            flavor: item.flavor,
           })),
           subtotal, // In pounds
           deliveryFee, // In pounds
@@ -288,109 +299,194 @@ export default function CheckoutPage() {
               </div>
             </SlideInUp>
 
-            {/* Delivery Address */}
-            <SlideInUp delay={0.2}>
+            {/* Delivery Method */}
+            <SlideInUp delay={0.15}>
               <div className="bg-white rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-sm">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="flex h-10 w-10 items-center justify-center rounded-full bg-honey-gold/10">
-                    <MapPin className="h-5 w-5 text-honey-gold" />
+                    <Package className="h-5 w-5 text-honey-gold" />
                   </div>
                   <h2 className="font-heading text-xl sm:text-2xl font-bold text-charcoal-black">
-                    Delivery Address
+                    Delivery Method
                   </h2>
                 </div>
 
-                <div className="space-y-4">
-                  <div>
-                    <label
-                      htmlFor="address"
-                      className="block text-sm font-semibold text-charcoal-black mb-2"
-                    >
-                      Street Address *
-                    </label>
-                    <Input
-                      id="address"
-                      name="address"
-                      type="text"
-                      placeholder="123 Main Street"
-                      value={customerInfo.address}
-                      onChange={handleInputChange}
-                      className={errors.address ? "border-red-500" : ""}
-                    />
-                    {errors.address && (
-                      <p className="text-red-500 text-xs mt-1">
-                        {errors.address}
+                <div className="space-y-3">
+                  <div
+                    onClick={() => setDeliveryMethod("DELIVERY")}
+                    className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
+                      deliveryMethod === "DELIVERY"
+                        ? "border-honey-gold bg-honey-gold/5"
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="radio"
+                        name="deliveryMethod"
+                        value="DELIVERY"
+                        checked={deliveryMethod === "DELIVERY"}
+                        onChange={() => setDeliveryMethod("DELIVERY")}
+                        className="w-4 h-4 text-honey-gold"
+                      />
+                      <div className="flex-1">
+                        <div className="font-semibold text-charcoal-black">
+                          Home Delivery
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          We'll deliver to your address{" "}
+                          {deliveryFee > 0 &&
+                            `(£${deliveryFee.toFixed(2)} fee)`}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div
+                    onClick={() => setDeliveryMethod("PICKUP")}
+                    className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
+                      deliveryMethod === "PICKUP"
+                        ? "border-honey-gold bg-honey-gold/5"
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="radio"
+                        name="deliveryMethod"
+                        value="PICKUP"
+                        checked={deliveryMethod === "PICKUP"}
+                        onChange={() => setDeliveryMethod("PICKUP")}
+                        className="w-4 h-4 text-honey-gold"
+                      />
+                      <div className="flex-1">
+                        <div className="font-semibold text-charcoal-black">
+                          Pickup from Store
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          Collect from our location (No delivery fee)
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {deliveryMethod === "PICKUP" && (
+                    <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      <p className="text-sm text-blue-800">
+                        <strong>Pickup Location:</strong> We'll notify you via
+                        SMS and email when your order is ready for pickup.
                       </p>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label
-                        htmlFor="city"
-                        className="block text-sm font-semibold text-charcoal-black mb-2"
-                      >
-                        City *
-                      </label>
-                      <Input
-                        id="city"
-                        name="city"
-                        type="text"
-                        placeholder="London"
-                        value={customerInfo.city}
-                        onChange={handleInputChange}
-                        className={errors.city ? "border-red-500" : ""}
-                      />
-                      {errors.city && (
-                        <p className="text-red-500 text-xs mt-1">
-                          {errors.city}
-                        </p>
-                      )}
                     </div>
-
-                    <div>
-                      <label
-                        htmlFor="postcode"
-                        className="block text-sm font-semibold text-charcoal-black mb-2"
-                      >
-                        Postcode *
-                      </label>
-                      <Input
-                        id="postcode"
-                        name="postcode"
-                        type="text"
-                        placeholder="SW1A 1AA"
-                        value={customerInfo.postcode}
-                        onChange={handleInputChange}
-                        className={errors.postcode ? "border-red-500" : ""}
-                      />
-                      {errors.postcode && (
-                        <p className="text-red-500 text-xs mt-1">
-                          {errors.postcode}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="deliveryNotes"
-                      className="block text-sm font-semibold text-charcoal-black mb-2"
-                    >
-                      Delivery Notes (Optional)
-                    </label>
-                    <Textarea
-                      id="deliveryNotes"
-                      name="deliveryNotes"
-                      placeholder="e.g., Ring doorbell, leave at reception, etc."
-                      rows={3}
-                      value={customerInfo.deliveryNotes}
-                      onChange={handleInputChange}
-                    />
-                  </div>
+                  )}
                 </div>
               </div>
             </SlideInUp>
+
+            {/* Delivery Address - Only show for delivery orders */}
+            {deliveryMethod === "DELIVERY" && (
+              <SlideInUp delay={0.2}>
+                <div className="bg-white rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-sm">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-honey-gold/10">
+                      <MapPin className="h-5 w-5 text-honey-gold" />
+                    </div>
+                    <h2 className="font-heading text-xl sm:text-2xl font-bold text-charcoal-black">
+                      Delivery Address
+                    </h2>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label
+                        htmlFor="address"
+                        className="block text-sm font-semibold text-charcoal-black mb-2"
+                      >
+                        Street Address *
+                      </label>
+                      <Input
+                        id="address"
+                        name="address"
+                        type="text"
+                        placeholder="123 Main Street"
+                        value={customerInfo.address}
+                        onChange={handleInputChange}
+                        className={errors.address ? "border-red-500" : ""}
+                      />
+                      {errors.address && (
+                        <p className="text-red-500 text-xs mt-1">
+                          {errors.address}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label
+                          htmlFor="city"
+                          className="block text-sm font-semibold text-charcoal-black mb-2"
+                        >
+                          City *
+                        </label>
+                        <Input
+                          id="city"
+                          name="city"
+                          type="text"
+                          placeholder="London"
+                          value={customerInfo.city}
+                          onChange={handleInputChange}
+                          className={errors.city ? "border-red-500" : ""}
+                        />
+                        {errors.city && (
+                          <p className="text-red-500 text-xs mt-1">
+                            {errors.city}
+                          </p>
+                        )}
+                      </div>
+
+                      <div>
+                        <label
+                          htmlFor="postcode"
+                          className="block text-sm font-semibold text-charcoal-black mb-2"
+                        >
+                          Postcode *
+                        </label>
+                        <Input
+                          id="postcode"
+                          name="postcode"
+                          type="text"
+                          placeholder="SW1A 1AA"
+                          value={customerInfo.postcode}
+                          onChange={handleInputChange}
+                          className={errors.postcode ? "border-red-500" : ""}
+                        />
+                        {errors.postcode && (
+                          <p className="text-red-500 text-xs mt-1">
+                            {errors.postcode}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label
+                        htmlFor="deliveryNotes"
+                        className="block text-sm font-semibold text-charcoal-black mb-2"
+                      >
+                        Delivery Notes (Optional)
+                      </label>
+                      <Textarea
+                        id="deliveryNotes"
+                        name="deliveryNotes"
+                        placeholder="e.g., Ring doorbell, leave at reception, etc."
+                        rows={3}
+                        value={customerInfo.deliveryNotes}
+                        onChange={handleInputChange}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </SlideInUp>
+            )}
           </div>
 
           {/* Order Summary */}

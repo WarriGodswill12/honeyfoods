@@ -325,10 +325,14 @@ export async function sendOrderReceipt(order: OrderDetails): Promise<boolean> {
 export async function sendAdminNotification(
   order: OrderDetails,
 ): Promise<boolean> {
-  const adminEmail = process.env.ADMIN_EMAIL;
+  // Use SMTP_FROM_EMAIL or SMTP_USER as the admin notification email
+  // ADMIN_EMAIL is for login credentials only
+  const adminEmail = process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER;
 
   if (!adminEmail) {
-    console.warn("Admin email not configured, skipping admin notification");
+    console.warn(
+      "Admin notification email not configured. Set SMTP_FROM_EMAIL or SMTP_USER in .env to receive order notifications.",
+    );
     return false;
   }
 
@@ -338,6 +342,85 @@ export async function sendAdminNotification(
   return sendEmail({
     to: adminEmail,
     subject: `🔔 New Order: ${order.orderNumber}`,
+    html,
+    text,
+  });
+}
+
+// Pickup ready notification
+interface PickupReadyDetails {
+  orderNumber: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+}
+
+export async function sendPickupReadyNotification(
+  pickup: PickupReadyDetails,
+): Promise<boolean> {
+  if (!pickup.customerEmail) {
+    console.log("No customer email provided, skipping pickup notification");
+    return false;
+  }
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <title>Order Ready for Pickup</title>
+    </head>
+    <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #1f2937; background-color: #f9fafb; margin: 0; padding: 20px;">
+      <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <!-- Header -->
+        <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 30px 20px; text-align: center;">
+          <h1 style="margin: 0; font-size: 28px; font-weight: 700;">🎉 Order Ready!</h1>
+          <p style="margin: 10px 0 0 0; font-size: 16px; opacity: 0.95;">Your order is ready for pickup</p>
+        </div>
+
+        <!-- Content -->
+        <div style="padding: 30px 20px;">
+          <p style="font-size: 16px; margin-bottom: 20px;">
+            Hello ${pickup.customerName},
+          </p>
+          
+          <p style="font-size: 16px; margin-bottom: 20px;">
+            Great news! Your order <strong>${pickup.orderNumber}</strong> is now ready for pickup.
+          </p>
+
+          <div style="background-color: #f3f4f6; border-left: 4px solid #10b981; padding: 15px; margin: 20px 0; border-radius: 4px;">
+            <p style="margin: 0; font-size: 14px; color: #4b5563;">
+              <strong>📍 Pickup Location:</strong><br>
+              Please visit our store during business hours to collect your order.<br>
+              Don't forget to bring your order number: <strong>${pickup.orderNumber}</strong>
+            </p>
+          </div>
+
+          <p style="font-size: 14px; color: #6b7280; margin-top: 20px;">
+            If you have any questions, please contact us at ${pickup.customerPhone}
+          </p>
+
+          <p style="font-size: 16px; margin-top: 30px;">
+            Thank you for choosing Honey Foods!
+          </p>
+        </div>
+
+        <!-- Footer -->
+        <div style="padding: 20px; background-color: #1f2937; color: #9ca3af; text-align: center; font-size: 12px;">
+          <p style="margin: 0;">© ${new Date().getFullYear()} Honey Foods. All rights reserved.</p>
+          <p style="margin: 5px 0 0 0;">Questions? Contact us at ${process.env.SMTP_FROM_EMAIL || "info@honeycakesandfoods.com"}</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const text = `Order Ready for Pickup!\n\nHello ${pickup.customerName},\n\nYour order ${pickup.orderNumber} is now ready for pickup.\n\nPlease visit our store during business hours to collect your order.\n\nThank you for choosing Honey Foods!`;
+
+  return sendEmail({
+    to: pickup.customerEmail,
+    subject: `🎉 Order Ready for Pickup - ${pickup.orderNumber}`,
     html,
     text,
   });

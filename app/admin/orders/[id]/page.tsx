@@ -37,6 +37,7 @@ interface Order {
   customerName: string;
   customerEmail: string | null;
   customerPhone: string;
+  deliveryMethod?: "DELIVERY" | "PICKUP";
   deliveryAddress: string;
   customNote: string | null;
   subtotal: number;
@@ -112,6 +113,32 @@ export default function OrderDetailsPage() {
     }
   };
 
+  const handleMarkReadyForPickup = async () => {
+    if (!order) return;
+
+    try {
+      setIsUpdating(true);
+      const response = await fetch(`/api/orders/${orderId}/mark-ready`, {
+        method: "POST",
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Refresh order data
+        await fetchOrder();
+        alert("Customer has been notified that the order is ready for pickup!");
+      } else {
+        const errorData = await response.json();
+        alert(errorData.error || "Failed to mark order as ready");
+      }
+    } catch (error) {
+      console.error("Error marking order ready:", error);
+      alert("Failed to mark order as ready");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     const statusConfig = {
       PENDING: { label: "Pending", className: "bg-orange-100 text-orange-800" },
@@ -126,6 +153,14 @@ export default function OrderDetailsPage() {
       },
       DELIVERED: {
         label: "Delivered",
+        className: "bg-green-100 text-green-800",
+      },
+      READY_FOR_PICKUP: {
+        label: "Ready for Pickup",
+        className: "bg-teal-100 text-teal-800",
+      },
+      PICKED_UP: {
+        label: "Picked Up",
         className: "bg-green-100 text-green-800",
       },
       CANCELLED: { label: "Cancelled", className: "bg-red-100 text-red-800" },
@@ -323,8 +358,25 @@ export default function OrderDetailsPage() {
               </div>
               <div>
                 <p className="text-sm text-gray-600 flex items-center gap-1">
+                  <Package className="h-4 w-4" />
+                  Delivery Method
+                </p>
+                <Badge
+                  className={
+                    order.deliveryMethod === "PICKUP"
+                      ? "bg-purple-100 text-purple-800"
+                      : "bg-blue-100 text-blue-800"
+                  }
+                >
+                  {order.deliveryMethod === "PICKUP" ? "Pickup" : "Delivery"}
+                </Badge>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600 flex items-center gap-1">
                   <MapPin className="h-4 w-4" />
-                  Delivery Address
+                  {order.deliveryMethod === "PICKUP"
+                    ? "Pickup Note"
+                    : "Delivery Address"}
                 </p>
                 <p className="font-medium text-charcoal-black">
                   {order.deliveryAddress}
@@ -352,15 +404,39 @@ export default function OrderDetailsPage() {
             <h2 className="text-lg font-bold text-charcoal-black mb-4">
               Update Status
             </h2>
+
+            {order.deliveryMethod === "PICKUP" &&
+              order.status === "PREPARING" && (
+                <Button
+                  onClick={handleMarkReadyForPickup}
+                  disabled={isUpdating}
+                  className="w-full mb-4 bg-green-600 hover:bg-green-700 text-white"
+                >
+                  {isUpdating
+                    ? "Notifying..."
+                    : "✓ Mark Ready & Notify Customer"}
+                </Button>
+              )}
+
             <div className="space-y-2">
-              {[
-                "PENDING",
-                "CONFIRMED",
-                "PREPARING",
-                "OUT_FOR_DELIVERY",
-                "DELIVERED",
-                "CANCELLED",
-              ].map((status) => (
+              {(order.deliveryMethod === "PICKUP"
+                ? [
+                    "PENDING",
+                    "CONFIRMED",
+                    "PREPARING",
+                    "READY_FOR_PICKUP",
+                    "PICKED_UP",
+                    "CANCELLED",
+                  ]
+                : [
+                    "PENDING",
+                    "CONFIRMED",
+                    "PREPARING",
+                    "OUT_FOR_DELIVERY",
+                    "DELIVERED",
+                    "CANCELLED",
+                  ]
+              ).map((status) => (
                 <Button
                   key={status}
                   onClick={() => handleUpdateStatus(status)}
@@ -368,7 +444,7 @@ export default function OrderDetailsPage() {
                   variant={order.status === status ? "default" : "outline"}
                   className="w-full justify-start"
                 >
-                  {status.replace("_", " ")}
+                  {status.replace(/_/g, " ")}
                 </Button>
               ))}
             </div>

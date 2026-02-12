@@ -92,11 +92,9 @@ function OrderConfirmationContent() {
 
         const data = await response.json();
 
-        // Verify payment status matches order
-        if (
-          data.paymentStatus !== "paid" &&
-          data.paymentStatus !== "succeeded"
-        ) {
+        // Verify payment status matches order (check both uppercase and lowercase)
+        const paymentStatus = (data.paymentStatus || "").toUpperCase();
+        if (paymentStatus !== "PAID" && paymentStatus !== "SUCCEEDED") {
           setError(
             "Payment not completed. Please complete your payment to view order details.",
           );

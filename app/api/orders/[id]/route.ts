@@ -39,6 +39,7 @@ export async function GET(
       customerName: order.customerName,
       customerEmail: order.customerEmail,
       customerPhone: order.customerPhone,
+      deliveryMethod: order.deliveryMethod || "DELIVERY",
       deliveryAddress: order.deliveryAddress,
       customNote: order.customNote,
       orderItems: orderItems.map((item) => ({
