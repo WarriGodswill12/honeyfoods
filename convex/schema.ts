@@ -43,7 +43,9 @@ export default defineSchema({
     customerName: v.string(),
     customerEmail: v.optional(v.string()),
     customerPhone: v.string(),
-    deliveryMethod: v.union(v.literal("DELIVERY"), v.literal("PICKUP")), // Delivery method
+    deliveryMethod: v.optional(
+      v.union(v.literal("DELIVERY"), v.literal("PICKUP")),
+    ), // Optional for backwards compatibility
     deliveryAddress: v.string(), // For delivery orders or pickup location info
     customNote: v.optional(v.string()),
     subtotal: v.number(), // in pounds (decimal)

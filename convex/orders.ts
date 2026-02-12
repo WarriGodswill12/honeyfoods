@@ -131,7 +131,9 @@ export const createOrder = mutation({
     customerName: v.string(),
     customerEmail: v.optional(v.string()),
     customerPhone: v.string(),
-    deliveryMethod: v.union(v.literal("DELIVERY"), v.literal("PICKUP")),
+    deliveryMethod: v.optional(
+      v.union(v.literal("DELIVERY"), v.literal("PICKUP")),
+    ),
     deliveryAddress: v.string(),
     customNote: v.optional(v.string()),
     subtotal: v.number(),
@@ -154,6 +156,7 @@ export const createOrder = mutation({
     // Create order
     const orderId = await ctx.db.insert("orders", {
       ...orderData,
+      deliveryMethod: orderData.deliveryMethod || "DELIVERY", // Default to DELIVERY for old orders
       status: "PENDING",
       paymentStatus: "PENDING",
       createdAt: now,
