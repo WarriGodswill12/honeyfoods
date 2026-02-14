@@ -9,6 +9,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import {
   Breadcrumb,
@@ -42,6 +44,7 @@ import {
   Package,
   Ruler,
   Home,
+  Calendar,
 } from "lucide-react";
 import { FadeIn, SlideInUp } from "@/components/shared/animated";
 
@@ -54,6 +57,13 @@ export default function ProductDetailPage() {
   const [customNote, setCustomNote] = useState("");
   const [selectedFlavor, setSelectedFlavor] = useState<string>("");
   const [isAddingToCart, setIsAddingToCart] = useState(false);
+
+  // Calendar state for cakes
+  const [cakeCalendarInfo, setCakeCalendarInfo] = useState({
+    deliveryDate: "",
+    cakeTitle: "",
+    cakeNote: "",
+  });
 
   // Get available products
   const products = useMemo(() => {
@@ -108,17 +118,29 @@ export default function ProductDetailPage() {
 
     setIsAddingToCart(true);
 
-    addItem(
-      {
-        productId: product._id,
-        name: product.name,
-        price: product.price, // Now in pounds
-        imageUrl: product.image,
-        note: customNote || undefined,
-        flavor: selectedFlavor || undefined,
-      },
-      quantity,
-    );
+    const cartItem = {
+      productId: product._id,
+      name: product.name,
+      price: product.price, // Now in pounds
+      imageUrl: product.image,
+      note: customNote || undefined,
+      flavor: selectedFlavor || undefined,
+      // Calendar info for cakes
+      deliveryDate:
+        product.category?.toLowerCase() === "cakes"
+          ? cakeCalendarInfo.deliveryDate || undefined
+          : undefined,
+      cakeTitle:
+        product.category?.toLowerCase() === "cakes"
+          ? cakeCalendarInfo.cakeTitle || undefined
+          : undefined,
+      cakeNote:
+        product.category?.toLowerCase() === "cakes"
+          ? cakeCalendarInfo.cakeNote || undefined
+          : undefined,
+    };
+
+    addItem(cartItem, quantity);
 
     setTimeout(() => {
       setIsAddingToCart(false);
@@ -410,6 +432,93 @@ export default function ProductDetailPage() {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+            )}
+
+            {/* Calendar Section for Cakes */}
+            {product.category?.toLowerCase() === "cakes" && (
+              <div className="mb-6 pb-6 border-b border-gray-200">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-warm-orange/10">
+                    <Calendar className="h-4 w-4 text-warm-orange" />
+                  </div>
+                  <h3 className="font-semibold text-lg text-charcoal-black">
+                    Cake Delivery Schedule (Optional)
+                  </h3>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <label
+                      htmlFor="deliveryDate"
+                      className="block text-sm font-semibold text-charcoal-black mb-2"
+                    >
+                      Preferred Delivery Date
+                    </label>
+                    <Input
+                      id="deliveryDate"
+                      name="deliveryDate"
+                      type="date"
+                      value={cakeCalendarInfo.deliveryDate}
+                      onChange={(e) =>
+                        setCakeCalendarInfo({
+                          ...cakeCalendarInfo,
+                          deliveryDate: e.target.value,
+                        })
+                      }
+                      min={new Date().toISOString().split("T")[0]}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Leave blank for standard delivery timing
+                    </p>
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="cakeTitle"
+                      className="block text-sm font-semibold text-charcoal-black mb-2"
+                    >
+                      Event/Occasion Title
+                    </label>
+                    <Input
+                      id="cakeTitle"
+                      name="cakeTitle"
+                      type="text"
+                      placeholder="e.g., John's Birthday, Anniversary, Wedding"
+                      value={cakeCalendarInfo.cakeTitle}
+                      onChange={(e) =>
+                        setCakeCalendarInfo({
+                          ...cakeCalendarInfo,
+                          cakeTitle: e.target.value,
+                        })
+                      }
+                      maxLength={100}
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="cakeNote"
+                      className="block text-sm font-semibold text-charcoal-black mb-2"
+                    >
+                      Special Instructions for Cake
+                    </label>
+                    <Textarea
+                      id="cakeNote"
+                      name="cakeNote"
+                      placeholder="e.g., Happy Birthday message, dietary requirements, decoration requests"
+                      rows={3}
+                      value={cakeCalendarInfo.cakeNote}
+                      onChange={(e) =>
+                        setCakeCalendarInfo({
+                          ...cakeCalendarInfo,
+                          cakeNote: e.target.value,
+                        })
+                      }
+                      maxLength={200}
+                    />
+                  </div>
+                </div>
               </div>
             )}
 

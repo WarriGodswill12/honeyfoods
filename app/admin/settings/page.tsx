@@ -54,6 +54,7 @@ export default function SettingsPage() {
       await updateSettings({
         deliveryFee: payload.deliveryFee,
         freeDeliveryThreshold: payload.freeDeliveryThreshold,
+        freeDeliveryText: payload.freeDeliveryText,
         minOrderAmount: payload.minOrderAmount,
       });
 
@@ -75,7 +76,7 @@ export default function SettingsPage() {
   const handleChange = (field: keyof typeof formData, value: string) => {
     setFormData((prev) => ({
       ...prev,
-      [field]: parseFloat(value) || 0,
+      [field]: field === "freeDeliveryText" ? value : parseFloat(value) || 0,
     }));
   };
 

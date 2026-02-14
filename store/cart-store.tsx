@@ -12,6 +12,10 @@ export interface CartItem {
   quantity: number;
   note?: string; // Optional custom note for the item
   flavor?: string; // Selected flavor for products that have flavor options
+  // Calendar info for cakes
+  deliveryDate?: string;
+  cakeTitle?: string;
+  cakeNote?: string;
 }
 
 interface CartContextType {

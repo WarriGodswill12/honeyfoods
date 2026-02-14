@@ -80,6 +80,10 @@ interface OrderDetails {
     price: number;
     subtotal: number;
     flavor?: string;
+    // Calendar fields for cakes
+    deliveryDate?: string;
+    cakeTitle?: string;
+    cakeNote?: string;
   }>;
   subtotal: number;
   deliveryFee: number;
@@ -95,6 +99,17 @@ export function generateOrderReceiptHTML(order: OrderDetails): string {
       <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">
         ${item.name}
         ${item.flavor ? `<br><span style="font-size: 12px; color: #6b7280;">Flavor: ${item.flavor}</span>` : ""}
+        ${
+          item.deliveryDate || item.cakeTitle || item.cakeNote
+            ? `
+        <div style="margin-top: 8px; padding: 8px; background-color: #fff7ed; border: 1px solid #fed7aa; border-radius: 4px;">
+          <p style="margin: 0; font-size: 12px; font-weight: 600; color: #c2410c;">🎂 Cake Details:</p>
+          ${item.deliveryDate ? `<p style="margin: 4px 0 0 0; font-size: 11px; color: #9a3412;">📅 Delivery: ${new Date(item.deliveryDate + "T00:00:00").toLocaleDateString("en-GB", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</p>` : ""}
+          ${item.cakeTitle ? `<p style="margin: 4px 0 0 0; font-size: 11px; color: #9a3412;">🎉 Event: ${item.cakeTitle}</p>` : ""}
+          ${item.cakeNote ? `<p style="margin: 4px 0 0 0; font-size: 11px; color: #9a3412;">📝 Note: ${item.cakeNote}</p>` : ""}
+        </div>`
+            : ""
+        }
       </td>
       <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: center;">${item.quantity}</td>
       <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: right;">£${item.price.toFixed(2)}</td>

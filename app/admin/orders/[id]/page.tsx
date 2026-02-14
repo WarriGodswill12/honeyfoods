@@ -29,6 +29,10 @@ interface OrderItem {
   subtotal: number;
   image: string;
   selectedFlavor?: string;
+  // Calendar fields for cakes
+  deliveryDate?: string;
+  cakeTitle?: string;
+  cakeNote?: string;
 }
 
 interface Order {
@@ -40,10 +44,6 @@ interface Order {
   deliveryMethod?: "DELIVERY" | "PICKUP";
   deliveryAddress: string;
   customNote: string | null;
-  // Calendar fields for cakes
-  deliveryDate?: string;
-  cakeTitle?: string;
-  cakeNote?: string;
   subtotal: number;
   deliveryFee: number;
   total: number;
@@ -288,6 +288,41 @@ export default function OrderDetailsPage() {
                                 Flavor: {item.selectedFlavor}
                               </p>
                             )}
+                            {/* Calendar info for this cake item */}
+                            {(item.deliveryDate ||
+                              item.cakeTitle ||
+                              item.cakeNote) && (
+                              <div className="mt-2 p-2 bg-orange-50 border border-orange-200 rounded-md">
+                                <p className="text-xs font-semibold text-orange-800 flex items-center gap-1">
+                                  <Calendar className="h-3 w-3" />
+                                  Cake Details
+                                </p>
+                                {item.deliveryDate && (
+                                  <p className="text-xs text-orange-700 mt-1">
+                                    <strong>Delivery Date:</strong>{" "}
+                                    {new Date(
+                                      item.deliveryDate + "T00:00:00",
+                                    ).toLocaleDateString("en-GB", {
+                                      weekday: "short",
+                                      year: "numeric",
+                                      month: "short",
+                                      day: "numeric",
+                                    })}
+                                  </p>
+                                )}
+                                {item.cakeTitle && (
+                                  <p className="text-xs text-orange-700 mt-1">
+                                    <strong>Event:</strong> {item.cakeTitle}
+                                  </p>
+                                )}
+                                {item.cakeNote && (
+                                  <p className="text-xs text-orange-700 mt-1">
+                                    <strong>Instructions:</strong>{" "}
+                                    {item.cakeNote}
+                                  </p>
+                                )}
+                              </div>
+                            )}
                           </div>
                         </div>
                       </td>
@@ -395,58 +430,6 @@ export default function OrderDetailsPage() {
                   <p className="font-medium text-charcoal-black italic">
                     {order.customNote}
                   </p>
-                </div>
-              )}
-
-              {/* Calendar Information for Cakes */}
-              {(order.deliveryDate || order.cakeTitle || order.cakeNote) && (
-                <div className="pt-4 border-t border-gray-200">
-                  <p className="text-sm text-gray-600 flex items-center gap-1 mb-3">
-                    <Calendar className="h-4 w-4" />
-                    Cake Schedule & Details
-                  </p>
-
-                  <div className="space-y-3 bg-orange-50 p-3 rounded-lg">
-                    {order.deliveryDate && (
-                      <div>
-                        <p className="text-xs font-semibold text-orange-800">
-                          Preferred Delivery Date:
-                        </p>
-                        <p className="text-sm font-medium text-charcoal-black">
-                          {new Date(
-                            order.deliveryDate + "T00:00:00",
-                          ).toLocaleDateString("en-GB", {
-                            weekday: "long",
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                          })}
-                        </p>
-                      </div>
-                    )}
-
-                    {order.cakeTitle && (
-                      <div>
-                        <p className="text-xs font-semibold text-orange-800">
-                          Event/Occasion:
-                        </p>
-                        <p className="text-sm font-medium text-charcoal-black">
-                          {order.cakeTitle}
-                        </p>
-                      </div>
-                    )}
-
-                    {order.cakeNote && (
-                      <div>
-                        <p className="text-xs font-semibold text-orange-800">
-                          Special Instructions:
-                        </p>
-                        <p className="text-sm font-medium text-charcoal-black italic">
-                          {order.cakeNote}
-                        </p>
-                      </div>
-                    )}
-                  </div>
                 </div>
               )}
             </div>

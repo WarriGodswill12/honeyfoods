@@ -127,6 +127,36 @@ export default function CartPage() {
                         Note: {item.note}
                       </p>
                     )}
+                    {/* Calendar info for cakes */}
+                    {(item.deliveryDate || item.cakeTitle || item.cakeNote) && (
+                      <div className="mt-1 p-2 bg-orange-50 border border-orange-200 rounded-md">
+                        <p className="text-xs font-semibold text-orange-800">
+                          🎂 Cake Details
+                        </p>
+                        {item.deliveryDate && (
+                          <p className="text-xs text-orange-700 mt-0.5">
+                            📅{" "}
+                            {new Date(
+                              item.deliveryDate + "T00:00:00",
+                            ).toLocaleDateString("en-GB", {
+                              weekday: "short",
+                              month: "short",
+                              day: "numeric",
+                            })}
+                          </p>
+                        )}
+                        {item.cakeTitle && (
+                          <p className="text-xs text-orange-700 mt-0.5">
+                            🎉 {item.cakeTitle}
+                          </p>
+                        )}
+                        {item.cakeNote && (
+                          <p className="text-xs text-orange-700 mt-0.5 line-clamp-1">
+                            📝 {item.cakeNote}
+                          </p>
+                        )}
+                      </div>
+                    )}
                     <p className="mt-1 text-base sm:text-lg font-bold text-warm-orange">
                       £{item.price.toFixed(2)}
                     </p>

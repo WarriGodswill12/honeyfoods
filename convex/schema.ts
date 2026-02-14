@@ -48,10 +48,6 @@ export default defineSchema({
     ), // Optional for backwards compatibility
     deliveryAddress: v.string(), // For delivery orders or pickup location info
     customNote: v.optional(v.string()),
-    // Calendar fields for cakes
-    deliveryDate: v.optional(v.string()), // ISO date string for cake delivery
-    cakeTitle: v.optional(v.string()), // Title for the cake occasion
-    cakeNote: v.optional(v.string()), // Note for the cake
     subtotal: v.number(), // in pounds (decimal)
     deliveryFee: v.number(), // in pounds (decimal) - 0 for pickup
     total: v.number(), // in pounds (decimal)
@@ -90,6 +86,10 @@ export default defineSchema({
     quantity: v.number(),
     subtotal: v.number(), // in pounds (decimal)
     selectedFlavor: v.optional(v.string()), // Selected flavor for this item
+    // Calendar fields for individual cake items
+    deliveryDate: v.optional(v.string()), // ISO date string for cake delivery
+    cakeTitle: v.optional(v.string()), // Title for the cake occasion
+    cakeNote: v.optional(v.string()), // Special notes for this cake
   })
     .index("by_order", ["orderId"])
     .index("by_product", ["productId"]),
