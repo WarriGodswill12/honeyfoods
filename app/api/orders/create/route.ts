@@ -9,6 +9,7 @@ export async function POST(request: NextRequest) {
     const {
       customerInfo,
       deliveryMethod,
+      cakeCalendarInfo,
       items,
       subtotal,
       deliveryFee,
@@ -210,6 +211,14 @@ export async function POST(request: NextRequest) {
           ? "PICKUP - Customer will collect from store"
           : `${sanitizedInfo.address}, ${sanitizedInfo.city}, ${sanitizedInfo.postcode}`,
       customNote: sanitizedInfo.deliveryNotes || undefined,
+      // Calendar fields for cakes
+      deliveryDate: cakeCalendarInfo?.deliveryDate || undefined,
+      cakeTitle: cakeCalendarInfo?.cakeTitle
+        ? sanitizeString(cakeCalendarInfo.cakeTitle)
+        : undefined,
+      cakeNote: cakeCalendarInfo?.cakeNote
+        ? sanitizeString(cakeCalendarInfo.cakeNote)
+        : undefined,
       subtotal: calculatedSubtotal,
       deliveryFee: calculatedDeliveryFee,
       total: calculatedTotal,

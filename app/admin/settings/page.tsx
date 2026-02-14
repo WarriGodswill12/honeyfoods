@@ -21,6 +21,7 @@ export default function SettingsPage() {
   const [formData, setFormData] = useState({
     deliveryFee: 0,
     freeDeliveryThreshold: 0,
+    freeDeliveryText: "",
     minOrderAmount: 0,
   });
 
@@ -30,6 +31,7 @@ export default function SettingsPage() {
       setFormData({
         deliveryFee: settings.deliveryFee || 0,
         freeDeliveryThreshold: settings.freeDeliveryThreshold || 0,
+        freeDeliveryText: (settings as any).freeDeliveryText || "",
         minOrderAmount: (settings as any).minOrderAmount || 0,
       });
     }
@@ -44,6 +46,7 @@ export default function SettingsPage() {
     const payload = {
       deliveryFee: formData.deliveryFee,
       freeDeliveryThreshold: formData.freeDeliveryThreshold,
+      freeDeliveryText: formData.freeDeliveryText,
       minOrderAmount: formData.minOrderAmount,
     };
 
@@ -200,6 +203,26 @@ export default function SettingsPage() {
               <p className="text-sm text-gray-500 mt-1">
                 Orders over £{(formData.freeDeliveryThreshold || 0).toFixed(2)}{" "}
                 get free delivery
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Free Delivery Message
+              </label>
+              <Input
+                type="text"
+                value={formData.freeDeliveryText}
+                onChange={(e) =>
+                  handleChange("freeDeliveryText", e.target.value)
+                }
+                placeholder="Add £{amount} more for free delivery!"
+                maxLength={150}
+              />
+              <p className="text-sm text-gray-500 mt-1">
+                Custom message shown to customers. Use {"{amount}"} as
+                placeholder for the remaining amount. Default: "Add £
+                {"{amount}"} more for free delivery!"
               </p>
             </div>
 

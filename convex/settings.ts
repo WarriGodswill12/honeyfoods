@@ -67,6 +67,7 @@ export const updateSettings = mutation({
   args: {
     deliveryFee: v.optional(v.number()),
     freeDeliveryThreshold: v.optional(v.number()),
+    freeDeliveryText: v.optional(v.string()),
     minOrderAmount: v.optional(v.number()),
     taxRate: v.optional(v.number()),
     currency: v.optional(v.string()),
@@ -96,6 +97,7 @@ export const updateSettings = mutation({
       const id = await ctx.db.insert("settings", {
         deliveryFee: args.deliveryFee ?? 5, // £5.00 (stored in pounds, not pence)
         freeDeliveryThreshold: args.freeDeliveryThreshold,
+        freeDeliveryText: args.freeDeliveryText,
         minOrderAmount: args.minOrderAmount,
         taxRate: args.taxRate,
         currency: args.currency ?? "GBP",

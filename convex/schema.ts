@@ -48,6 +48,10 @@ export default defineSchema({
     ), // Optional for backwards compatibility
     deliveryAddress: v.string(), // For delivery orders or pickup location info
     customNote: v.optional(v.string()),
+    // Calendar fields for cakes
+    deliveryDate: v.optional(v.string()), // ISO date string for cake delivery
+    cakeTitle: v.optional(v.string()), // Title for the cake occasion
+    cakeNote: v.optional(v.string()), // Note for the cake
     subtotal: v.number(), // in pounds (decimal)
     deliveryFee: v.number(), // in pounds (decimal) - 0 for pickup
     total: v.number(), // in pounds (decimal)
@@ -128,6 +132,7 @@ export default defineSchema({
   settings: defineTable({
     deliveryFee: v.number(), // in pounds (decimal)
     freeDeliveryThreshold: v.optional(v.number()), // in pounds (decimal)
+    freeDeliveryText: v.optional(v.string()), // Custom text for free delivery message
     minOrderAmount: v.optional(v.number()), // in pounds (decimal)
     taxRate: v.optional(v.number()),
     currency: v.string(),

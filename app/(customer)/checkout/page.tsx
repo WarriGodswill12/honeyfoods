@@ -22,6 +22,7 @@ import {
   User,
   Mail,
   Phone,
+  Calendar,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -31,6 +32,8 @@ export default function CheckoutPage() {
   const router = useRouter();
   const { items, getTotalPrice, clearCart } = useCart();
   const settings = useQuery(api.settings.getSettings);
+  // Query products to check for cakes
+  const products = useQuery(api.products.getProducts, {});
   const [isProcessing, setIsProcessing] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
@@ -50,7 +53,23 @@ export default function CheckoutPage() {
     deliveryNotes: "",
   });
 
+  // Calendar state for cakes
+  const [cakeCalendarInfo, setCakeCalendarInfo] = useState({
+    deliveryDate: "",
+    cakeTitle: "",
+    cakeNote: "",
+  });
+
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Check if cart contains cakes
+  const hasCakes = () => {
+    if (!products) return false;
+    return items.some((item) => {
+      const product = products.find((p) => p._id === item.productId);
+      return product?.category?.toLowerCase() === "cakes";
+    });
+  };
 
   // Cart total and settings are in pounds
   const subtotal = getTotalPrice();
@@ -128,6 +147,8 @@ export default function CheckoutPage() {
         body: JSON.stringify({
           customerInfo,
           deliveryMethod,
+          // Calendar info for cakes
+          cakeCalendarInfo: hasCakes() ? cakeCalendarInfo : undefined,
           items: items.map((item) => ({
             productId: item.productId,
             name: item.name,
@@ -483,6 +504,93 @@ export default function CheckoutPage() {
                         onChange={handleInputChange}
                       />
                     </div>
+
+                    {/* Calendar Section for Cakes */}
+                    {hasCakes() && (
+                      <div className="border-t border-gray-200 pt-6">
+                        <div className="flex items-center gap-3 mb-4">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-warm-orange/10">
+                            <Calendar className="h-4 w-4 text-warm-orange" />
+                          </div>
+                          <h3 className="font-heading text-lg font-semibold text-charcoal-black">
+                            Cake Delivery Schedule (Optional)
+                          </h3>
+                        </div>
+
+                        <div className="space-y-4">
+                          <div>
+                            <label
+                              htmlFor="deliveryDate"
+                              className="block text-sm font-semibold text-charcoal-black mb-2"
+                            >
+                              Preferred Delivery Date
+                            </label>
+                            <Input
+                              id="deliveryDate"
+                              name="deliveryDate"
+                              type="date"
+                              value={cakeCalendarInfo.deliveryDate}
+                              onChange={(e) =>
+                                setCakeCalendarInfo({
+                                  ...cakeCalendarInfo,
+                                  deliveryDate: e.target.value,
+                                })
+                              }
+                              min={new Date().toISOString().split("T")[0]}
+                            />
+                            <p className="text-xs text-gray-500 mt-1">
+                              Leave blank for standard delivery timing
+                            </p>
+                          </div>
+
+                          <div>
+                            <label
+                              htmlFor="cakeTitle"
+                              className="block text-sm font-semibold text-charcoal-black mb-2"
+                            >
+                              Event Title
+                            </label>
+                            <Input
+                              id="cakeTitle"
+                              name="cakeTitle"
+                              type="text"
+                              placeholder="e.g., John's Birthday, Anniversary"
+                              value={cakeCalendarInfo.cakeTitle}
+                              onChange={(e) =>
+                                setCakeCalendarInfo({
+                                  ...cakeCalendarInfo,
+                                  cakeTitle: e.target.value,
+                                })
+                              }
+                              maxLength={100}
+                            />
+                          </div>
+
+                          <div>
+                            <label
+                              htmlFor="cakeNote"
+                              className="block text-sm font-semibold text-charcoal-black mb-2"
+                            >
+                              Special Instructions for Cake
+                            </label>
+                            <Textarea
+                              id="cakeNote"
+                              name="cakeNote"
+                              placeholder="e.g., Happy Birthday message, no nuts, special requests"
+                              rows={2}
+                              value={cakeCalendarInfo.cakeNote}
+                              onChange={(e) =>
+                                setCakeCalendarInfo({
+                                  ...cakeCalendarInfo,
+                                  cakeNote: e.target.value,
+                                })
+                              }
+                              maxLength={200}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </SlideInUp>

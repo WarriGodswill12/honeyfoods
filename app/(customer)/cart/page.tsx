@@ -204,8 +204,12 @@ export default function CartPage() {
             {settings?.freeDeliveryThreshold !== undefined &&
               subtotal < settings.freeDeliveryThreshold && (
                 <p className="mt-3 sm:mt-4 text-xs sm:text-sm text-gray-600 bg-green-50 p-3 rounded-lg">
-                  Add £{(settings.freeDeliveryThreshold - subtotal).toFixed(2)}{" "}
-                  more for free delivery!
+                  {(settings as any)?.freeDeliveryText
+                    ? (settings as any).freeDeliveryText.replace(
+                        "{amount}",
+                        `£${(settings.freeDeliveryThreshold - subtotal).toFixed(2)}`,
+                      )
+                    : `Add £${(settings.freeDeliveryThreshold - subtotal).toFixed(2)} more for free delivery!`}
                 </p>
               )}
 

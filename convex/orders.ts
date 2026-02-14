@@ -136,6 +136,10 @@ export const createOrder = mutation({
     ),
     deliveryAddress: v.string(),
     customNote: v.optional(v.string()),
+    // Calendar fields for cakes
+    deliveryDate: v.optional(v.string()),
+    cakeTitle: v.optional(v.string()),
+    cakeNote: v.optional(v.string()),
     subtotal: v.number(),
     deliveryFee: v.number(),
     total: v.number(),
@@ -146,6 +150,7 @@ export const createOrder = mutation({
         price: v.number(),
         quantity: v.number(),
         subtotal: v.number(),
+        flavor: v.optional(v.string()), // Selected flavor for this item
       }),
     ),
   },
@@ -172,6 +177,7 @@ export const createOrder = mutation({
         price: item.price,
         quantity: item.quantity,
         subtotal: item.subtotal,
+        selectedFlavor: item.flavor,
       });
     }
 
