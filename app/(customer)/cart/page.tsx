@@ -233,14 +233,21 @@ export default function CartPage() {
 
             {settings?.freeDeliveryThreshold !== undefined &&
               subtotal < settings.freeDeliveryThreshold && (
-                <p className="mt-3 sm:mt-4 text-xs sm:text-sm text-gray-600 bg-green-50 p-3 rounded-lg">
-                  {(settings as any)?.freeDeliveryText
-                    ? (settings as any).freeDeliveryText.replace(
+                <div className="mt-3 sm:mt-4 space-y-2">
+                  <p className="text-xs sm:text-sm text-gray-600 bg-green-50 p-3 rounded-lg">
+                    Add £
+                    {(settings.freeDeliveryThreshold - subtotal).toFixed(2)}{" "}
+                    more for free delivery!
+                  </p>
+                  {(settings as any)?.freeDeliveryText && (
+                    <p className="text-xs sm:text-sm text-gray-600 bg-blue-50 p-3 rounded-lg border border-blue-200">
+                      {(settings as any).freeDeliveryText.replace(
                         "{amount}",
                         `£${(settings.freeDeliveryThreshold - subtotal).toFixed(2)}`,
-                      )
-                    : `Add £${(settings.freeDeliveryThreshold - subtotal).toFixed(2)} more for free delivery!`}
-                </p>
+                      )}
+                    </p>
+                  )}
+                </div>
               )}
 
             <Link href="/checkout" className="mt-4 sm:mt-6 block">
