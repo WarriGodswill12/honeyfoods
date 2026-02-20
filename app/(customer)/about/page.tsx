@@ -68,6 +68,34 @@ export default function AboutPage() {
         </div>
       </FadeIn>
 
+      {/* Allergen Information Section */}
+      <FadeIn className="mb-10 sm:mb-12 lg:mb-16">
+        <div className="mx-auto max-w-3xl bg-amber-50 border-2 border-amber-200 rounded-2xl p-6 sm:p-8">
+          <div className="flex items-start gap-3 mb-4">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-500 text-white shrink-0">
+              <span className="text-xl">⚠️</span>
+            </div>
+            <h2 className="font-heading text-2xl sm:text-3xl font-bold text-charcoal-black">
+              Allergen Information
+            </h2>
+          </div>
+          <div className="text-gray-700 leading-relaxed space-y-3">
+            <p>
+              Our cakes contain allergens including:{" "}
+              <strong>Milk, Eggs and Wheat (Gluten)</strong>. Small chops such
+              as samosa, spring roll and meat pie contain{" "}
+              <strong>Wheat (Gluten)</strong>. Chicken products may contain{" "}
+              <strong>Celery, Mustard or Soy</strong> depending on seasoning
+              used.
+            </p>
+            <p className="font-semibold text-amber-900">
+              Please inform us of any allergies before placing your order. Full
+              allergen information is available upon request.
+            </p>
+          </div>
+        </div>
+      </FadeIn>
+
       {/* Values Section */}
       <div className="mb-16">
         <FadeIn className="mb-8 text-center">

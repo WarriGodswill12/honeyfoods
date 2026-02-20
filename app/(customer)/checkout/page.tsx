@@ -580,6 +580,29 @@ export default function CheckoutPage() {
                       )}
                     </span>
                   </div>
+
+                  {/* Free delivery messages */}
+                  {deliveryMethod === "DELIVERY" &&
+                    settings?.freeDeliveryThreshold !== undefined &&
+                    subtotal < settings.freeDeliveryThreshold && (
+                      <div className="pt-2 space-y-2">
+                        <p className="text-xs text-gray-600 bg-green-50 p-2.5 rounded-lg">
+                          Add £
+                          {(settings.freeDeliveryThreshold - subtotal).toFixed(
+                            2,
+                          )}{" "}
+                          more for free delivery!
+                        </p>
+                        {(settings as any)?.freeDeliveryText && (
+                          <p className="text-xs text-gray-600 bg-blue-50 p-2.5 rounded-lg border border-blue-200">
+                            {(settings as any).freeDeliveryText.replace(
+                              "{amount}",
+                              `£${(settings.freeDeliveryThreshold - subtotal).toFixed(2)}`,
+                            )}
+                          </p>
+                        )}
+                      </div>
+                    )}
                 </div>
 
                 <div className="flex justify-between text-lg font-bold mb-6">

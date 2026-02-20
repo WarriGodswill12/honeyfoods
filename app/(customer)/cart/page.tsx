@@ -16,20 +16,13 @@ import { Trash2, Plus, Minus, ShoppingBag, Home } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 import Image from "next/image";
 import Link from "next/link";
-import { DEFAULT_DELIVERY_FEE, FREE_DELIVERY_THRESHOLD } from "@/lib/constants";
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, getTotalPrice } = useCart();
   const settings = useQuery(api.settings.getSettings);
 
-  // Cart total and settings are in pounds
+  // Cart total in pounds
   const subtotal = getTotalPrice();
-  const freeThreshold = settings?.freeDeliveryThreshold ?? Infinity;
-  const deliveryFee =
-    subtotal >= freeThreshold
-      ? 0
-      : (settings?.deliveryFee ?? DEFAULT_DELIVERY_FEE);
-  const total = subtotal + deliveryFee;
 
   if (items.length === 0) {
     return (
@@ -208,47 +201,17 @@ export default function CartPage() {
             </h2>
 
             <div className="space-y-3 sm:space-y-4 pb-4 sm:pb-6 mb-4 sm:mb-6 border-b border-gray-100">
-              <div className="flex justify-between text-sm sm:text-base text-gray-600">
+              <div className="flex justify-between text-base sm:text-lg font-bold">
                 <span>Subtotal</span>
-                <span className="font-semibold">{formatPrice(subtotal)}</span>
-              </div>
-              <div className="flex justify-between text-sm sm:text-base text-gray-600">
-                <span>Delivery Fee</span>
-                <span>
-                  {deliveryFee === 0 ? (
-                    <span className="text-green-600 font-semibold">FREE</span>
-                  ) : (
-                    formatPrice(deliveryFee)
-                  )}
+                <span className="text-warm-orange text-lg sm:text-xl">
+                  {formatPrice(subtotal)}
                 </span>
               </div>
             </div>
 
-            <div className="mt-3 sm:mt-4 flex justify-between text-base sm:text-lg font-bold">
-              <span>Total</span>
-              <span className="text-warm-orange text-lg sm:text-xl">
-                {formatPrice(total)}
-              </span>
-            </div>
-
-            {settings?.freeDeliveryThreshold !== undefined &&
-              subtotal < settings.freeDeliveryThreshold && (
-                <div className="mt-3 sm:mt-4 space-y-2">
-                  <p className="text-xs sm:text-sm text-gray-600 bg-green-50 p-3 rounded-lg">
-                    Add £
-                    {(settings.freeDeliveryThreshold - subtotal).toFixed(2)}{" "}
-                    more for free delivery!
-                  </p>
-                  {(settings as any)?.freeDeliveryText && (
-                    <p className="text-xs sm:text-sm text-gray-600 bg-blue-50 p-3 rounded-lg border border-blue-200">
-                      {(settings as any).freeDeliveryText.replace(
-                        "{amount}",
-                        `£${(settings.freeDeliveryThreshold - subtotal).toFixed(2)}`,
-                      )}
-                    </p>
-                  )}
-                </div>
-              )}
+            <p className="text-xs sm:text-sm text-gray-500 text-center mb-4">
+              Delivery fee will be calculated at checkout
+            </p>
 
             <Link href="/checkout" className="mt-4 sm:mt-6 block">
               <Button size="lg" className="w-full active:scale-[0.98]">
