@@ -546,7 +546,7 @@ export default function HomePage() {
 
       {/* How It Works */}
       <HowItWorks />
-      <div></div>
+      
     </div>
   );
 }
