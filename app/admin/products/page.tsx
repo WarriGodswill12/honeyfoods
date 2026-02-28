@@ -104,6 +104,7 @@ export default function ProductsPage() {
     featured: false,
     available: true,
     flavors: [] as string[],
+    allergies: "",
   });
 
   // Check if form is valid for submission
@@ -131,6 +132,7 @@ export default function ProductsPage() {
       featured: false,
       available: true, // Default to shop product
       flavors: [],
+      allergies: "",
     });
     setError("");
     setIsAddingNewCategory(false);
@@ -151,6 +153,7 @@ export default function ProductsPage() {
       featured: product.featured,
       available: product.available,
       flavors: product.flavors || [],
+      allergies: product.allergies || "",
     });
     setError("");
     setIsModalOpen(true);
@@ -180,6 +183,7 @@ export default function ProductsPage() {
         featured: formData.featured,
         available: formData.available,
         flavors: formData.flavors.length > 0 ? formData.flavors : undefined,
+        allergies: formData.allergies.trim() || undefined,
       };
 
       if (editingProduct) {
@@ -452,6 +456,17 @@ export default function ProductsPage() {
             required
             disabled={isSubmitting}
             rows={4}
+          />
+
+          <Textarea
+            label="Allergies (Optional)"
+            placeholder="e.g. Contains nuts, dairy, gluten, etc."
+            value={formData.allergies}
+            onChange={(e) =>
+              setFormData({ ...formData, allergies: e.target.value })
+            }
+            disabled={isSubmitting}
+            rows={2}
           />
 
           <div className="grid grid-cols-2 gap-4">

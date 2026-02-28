@@ -45,6 +45,7 @@ import {
   Ruler,
   Home,
   Calendar,
+  AlertCircle,
 } from "lucide-react";
 import { FadeIn, SlideInUp } from "@/components/shared/animated";
 
@@ -395,6 +396,15 @@ export default function ProductDetailPage() {
                       <strong className="text-charcoal-black">
                         {productSize}
                       </strong>
+                    </span>
+                  </div>
+                )}
+                {product.allergies && (
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4 text-red-500" />
+                    <span>
+                      <strong className="text-red-700">Allergies:</strong>{" "}
+                      {product.allergies}
                     </span>
                   </div>
                 )}

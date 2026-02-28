@@ -32,6 +32,7 @@ export default defineSchema({
     flavors: v.optional(v.array(v.string())), // Array of available flavors for this product
     createdAt: v.number(),
     updatedAt: v.number(),
+    allergies: v.optional(v.string()), // Optional allergies info
   })
     .index("by_slug", ["slug"])
     .index("by_availability", ["available", "featured"])
